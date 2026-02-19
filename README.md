@@ -4,11 +4,13 @@ A self-learning agent system that creates and codes Rust projects without requir
 
 ## Overview
 
-This project implements an innovative learning system where three agents work together:
+This project implements an innovative learning system with a hybrid architecture:
 
-1. **Question Agent** 🤔 - Generates questions about Rust programming concepts
-2. **Answer Agent** 💡 - Provides detailed answers with code examples
-3. **Learning Agent** 🧠 - Learns from Q&A pairs and builds a knowledge base
+1. **Question Agent** 🤔 - Spawned Claude Code agent that generates questions (teacher)
+2. **Answer Agent** 💡 - Spawned Claude Code agent that provides answers (teacher)
+3. **Learning Agent** 🧠 - YOUR local Rust agent that learns by reading files (student)
+
+The key innovation: Spawned Claude agents teach by writing to files, YOUR agent learns by reading them WITHOUT any API calls.
 
 ## How It Works
 
