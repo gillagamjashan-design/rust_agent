@@ -4,31 +4,31 @@ use serde::{Deserialize, Serialize};
 
 // CLIProxyAPI client for Claude Max subscription
 pub struct ClaudeProxy {
-    client: Client,
-    base_url: String,
+    pub(crate) client: Client,
+    pub(crate) base_url: String,
 }
 
 #[derive(Debug, Serialize)]
-struct ProxyRequest {
-    model: String,
-    max_tokens: u32,
-    messages: Vec<Message>,
+pub struct ProxyRequest {
+    pub model: String,
+    pub max_tokens: u32,
+    pub messages: Vec<Message>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Message {
-    role: String,
-    content: String,
+pub struct Message {
+    pub role: String,
+    pub content: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct ProxyResponse {
-    content: Vec<ContentBlock>,
+pub struct ProxyResponse {
+    pub content: Vec<ContentBlock>,
 }
 
 #[derive(Debug, Deserialize)]
-struct ContentBlock {
-    text: String,
+pub struct ContentBlock {
+    pub text: String,
 }
 
 impl ClaudeProxy {
@@ -66,7 +66,7 @@ impl ClaudeProxy {
         self.send_request(prompt).await
     }
 
-    async fn send_request(&self, prompt: String) -> Result<String> {
+    pub async fn send_request(&self, prompt: String) -> Result<String> {
         let request = ProxyRequest {
             model: "claude-sonnet-4-5-20250929".to_string(),
             max_tokens: 2048,
