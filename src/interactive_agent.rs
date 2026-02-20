@@ -2,7 +2,6 @@ use crate::claude_proxy::ClaudeProxy;
 use crate::types::KnowledgeBase;
 use anyhow::Result;
 use std::io::{self, Write};
-use std::path::PathBuf;
 
 pub struct InteractiveAgent {
     claude: ClaudeProxy,
@@ -25,7 +24,8 @@ impl InteractiveAgent {
     }
 
     fn load_knowledge(&mut self) -> Result<()> {
-        let knowledge_path = PathBuf::from("data/knowledge_base.json");
+        let home_dir = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
+        let knowledge_path = home_dir.join(".agent").join("data").join("knowledge_base.json");
 
         if knowledge_path.exists() {
             let content = std::fs::read_to_string(&knowledge_path)?;
@@ -218,7 +218,7 @@ impl InteractiveAgent {
             }
             Err(e) => {
                 println!("❌ Error: {}", e);
-                println!("\nMake sure CLIProxyAPI is running on localhost:8000");
+                println!("\nMake sure CLIProxyAPI is running on localhost:8317");
                 println!("Start it with: cd cliproxyapi && npm start");
             }
         }

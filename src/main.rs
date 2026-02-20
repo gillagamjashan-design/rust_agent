@@ -10,7 +10,6 @@ use learning_agent::LearningAgent;
 use proxy_agents::{ProxyAnswerAgent, ProxyQuestionAgent};
 
 use anyhow::Result;
-use std::path::PathBuf;
 use tokio::signal;
 
 #[derive(Parser, Debug)]
@@ -59,14 +58,15 @@ async fn run_learning_mode() -> Result<()> {
     println!("  🧠 Learning Agent → reads files → knowledge_base.json");
     println!();
     println!("Using: Claude Max subscription via CLIProxyAPI");
-    println!("Proxy: http://localhost:8000");
+    println!("Proxy: http://localhost:8317");
     println!();
     println!("Press Ctrl+C to stop learning and save knowledge");
     println!("═══════════════════════════════════════════════════════════════");
     println!();
 
-    // Setup paths
-    let data_dir = PathBuf::from("data");
+    // Setup paths in ~/.agent/data/
+    let home_dir = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
+    let data_dir = home_dir.join(".agent").join("data");
     std::fs::create_dir_all(&data_dir)?;
 
     let questions_file = data_dir.join("questions.txt");

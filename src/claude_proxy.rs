@@ -33,10 +33,10 @@ pub struct ContentBlock {
 
 impl ClaudeProxy {
     pub fn new() -> Self {
-        // CLIProxyAPI runs on localhost:8000 by default
+        // CLIProxyAPI runs on localhost:8317 by default
         Self {
             client: Client::new(),
-            base_url: "http://localhost:8000".to_string(),
+            base_url: "http://localhost:8317".to_string(),
         }
     }
 
@@ -79,12 +79,13 @@ impl ClaudeProxy {
         let response = self
             .client
             .post(format!("{}/v1/messages", self.base_url))
+            .header("Authorization", "Bearer rust-agent-key-123")
             .json(&request)
             .send()
             .await?;
 
         if !response.status().is_success() {
-            return Err(anyhow::anyhow!("CLIProxyAPI not running on localhost:8000"));
+            return Err(anyhow::anyhow!("CLIProxyAPI not running on localhost:8317"));
         }
 
         let proxy_response: ProxyResponse = response.json().await?;

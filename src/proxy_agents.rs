@@ -1,5 +1,5 @@
 use crate::claude_proxy::ClaudeProxy;
-use crate::types::{Answer, Question};
+use crate::types::Question;
 use anyhow::Result;
 use chrono::Utc;
 use std::fs::{File, OpenOptions};
