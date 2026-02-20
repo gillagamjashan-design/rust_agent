@@ -1,242 +1,162 @@
 # Self-Learning Rust Agent
 
-A self-learning agent system that creates and codes Rust projects without requiring external API calls. The system learns through a peer-to-peer question-and-answer mechanism between three specialized agents.
+A self-learning agent system that uses **CLIProxyAPI** to convert your Claude Max subscription into teacher agents, while YOUR local Rust agent learns by reading files.
 
 ## Overview
 
-This project implements an innovative learning system with a hybrid architecture:
+This system uses **CLIProxyAPI** - a local proxy that turns your Claude Max subscription into an API endpoint, allowing you to use it without additional API costs!
 
-1. **Question Agent** 🤔 - Spawned Claude Code agent that generates questions (teacher)
-2. **Answer Agent** 💡 - Spawned Claude Code agent that provides answers (teacher)
-3. **Learning Agent** 🧠 - YOUR local Rust agent that learns by reading files (student)
+### Components
 
-The key innovation: Spawned Claude agents teach by writing to files, YOUR agent learns by reading them WITHOUT any API calls.
+1. **Question Agent** 🤔 - Uses CLIProxyAPI (Claude Max) to generate programming questions
+2. **Answer Agent** 💡 - Uses CLIProxyAPI (Claude Max) to provide detailed answers
+3. **Learning Agent** 🧠 - YOUR local Rust agent that learns by reading files (NO API!)
 
-## How It Works
+## Why CLIProxyAPI?
 
-### The Learning Cycle
+- ✅ **Use your existing Claude Max subscription** - No additional API costs
+- ✅ **Local proxy server** - Fast, secure, OAuth authenticated
+- ✅ **OpenAI-compatible API** - Works like standard APIs
+- ✅ **Simple setup** - Just start the proxy and run
 
-```
-Question Agent → questions.txt → Answer Agent → answers.txt → Learning Agent → knowledge_base.json
-       ↑                                                              ↓
-       └──────────────────── Continuous Learning ────────────────────┘
-```
+## Quick Start
 
-1. **Question Agent** generates questions about Rust topics (ownership, traits, lifetimes, etc.) every 2 seconds
-2. **Answer Agent** reads questions and writes comprehensive answers with code examples every 2 seconds
-3. **Learning Agent** monitors both files, matches Q&A pairs, extracts patterns, and builds knowledge
-4. The cycle continues until you stop it with Ctrl+C
-
-### Key Features
-
-- **API-Free Learning** - All learning happens locally without external dependencies
-- **Concurrent Execution** - All three agents run in parallel using Tokio async runtime
-- **Persistent Knowledge** - Accumulated knowledge is saved to JSON format
-- **Real-time Updates** - Agents update files every 2 seconds
-- **Pattern Extraction** - Learning agent extracts code patterns and concepts
-- **Topic Coverage** - Covers 15 core Rust topics systematically
-
-## Installation
-
-### Prerequisites
-
-- Rust 1.70 or higher
-- Cargo (comes with Rust)
-
-### Building
+### 1. Install and Start CLIProxyAPI
 
 ```bash
-# Clone the repository
-git clone https://github.com/gillagamjashan-design/rust_agent.git
-cd rust_agent
+# Clone CLIProxyAPI
+git clone https://github.com/anthropics/cliproxyapi.git
+cd cliproxyapi
 
-# Build the project
-CARGO_HOME=../.cargo cargo build --release
+# Install and start
+npm install
+npm start
+```
 
-# Or for development
+This starts the proxy on `http://localhost:8000`
+
+### 2. Run the Learning Agent
+
+```bash
+cd /workspace/jashan/rust_agent
+
+# Build
 CARGO_HOME=../.cargo cargo build
-```
 
-## Usage
-
-### Running the System
-
-```bash
-# Run the learning system
+# Run
 CARGO_HOME=../.cargo cargo run
 ```
 
-The system will start all three agents and begin the learning cycle. You'll see output like:
+## How It Works
 
 ```
-╔══════════════════════════════════════════════════════════════╗
-║        Self-Learning Rust Agent System                      ║
-║        Three agents teaching and learning                   ║
-╚══════════════════════════════════════════════════════════════╝
-
-Starting three concurrent agents:
-  🤔 Question Agent - Generates Rust questions
-  💡 Answer Agent   - Provides detailed answers
-  🧠 Learning Agent - Learns from Q&A pairs
-
-Press Ctrl+C to stop the learning process
-
-❓ Q1: How does Rust's ownership system prevent memory leaks? [ownership]
-✅ A1: Answered question about 'ownership'
-📚 Learned from Q&A #1: ownership (Total knowledge: 3 items)
+Question Agent → CLIProxyAPI (localhost:8000) → Claude Max → questions.txt
+                                                                    ↓
+Answer Agent → CLIProxyAPI (localhost:8000) → Claude Max → answers.txt
+                                                                    ↓
+YOUR Learning Agent → Reads both files → Stores in knowledge_base.json
 ```
 
-### Stopping the System
+### The Learning Cycle
 
-Press **Ctrl+C** to gracefully stop all agents. The knowledge will be saved automatically.
-
-## Output Files
-
-The system creates three files in the `data/` directory:
-
-### 1. `questions.txt`
-Contains timestamped questions generated by the Question Agent:
-
-```
-[2026-02-19 23:16:31] Q1: How does Rust's ownership system prevent memory leaks? [ownership]
-[2026-02-19 23:16:33] Q2: What is the borrowing checker and what does it do? [borrowing]
-```
-
-### 2. `answers.txt`
-Contains detailed answers with code examples:
-
-```
-[2026-02-19 23:16:33] A1: Ownership is Rust's most unique feature...
-
-[CODE_EXAMPLE_1]
-fn main() {
-    let s1 = String::from("hello");
-    let s2 = s1;
-    println!("{}", s2);
-}
-[/CODE_EXAMPLE]
-```
-
-### 3. `knowledge_base.json`
-Structured knowledge base with Q&A pairs, patterns, and metadata:
-
-```json
-{
-  "version": "1.0",
-  "qa_pairs": [...],
-  "patterns": {...},
-  "topics_covered": ["ownership", "borrowing", ...],
-  "last_updated": "2026-02-19T23:16:39Z"
-}
-```
+1. **Question Agent** calls CLIProxyAPI to generate programming questions
+2. **Answer Agent** calls CLIProxyAPI to generate detailed answers with code
+3. **YOUR Learning Agent** monitors both files and learns WITHOUT any API calls
+4. Knowledge stored in `data/knowledge_base.json` (YOUR agent's brain!)
 
 ## Topics Covered
 
-The system teaches and learns about these Rust topics:
+Your agent learns about:
+- **Linux** - Commands, permissions, processes, file operations
+- **Git** - Version control, branches, merges, rebases
+- **GitHub CLI** - Repo management, PRs, issues, releases
+- **Bash** - Scripting, variables, loops, functions
+- **Networking** - curl, wget, ssh, scp, rsync
+- **Docker** - Containers, images, volumes, Dockerfile
+- **System** - Monitoring, services, logs
+- **Packages** - apt, npm, cargo, pip
 
-- **Ownership** - Memory management and ownership rules
-- **Borrowing** - References and the borrow checker
-- **Lifetimes** - Lifetime annotations and inference
-- **Traits** - Trait definitions and implementations
-- **Generics** - Generic types and monomorphization
-- **Error Handling** - Result, Option, and error propagation
-- **Modules** - Code organization and privacy
-- **Cargo** - Package management and build system
-- **Testing** - Unit and integration tests
-- **Macros** - Declarative and procedural macros
-- **Concurrency** - Threads, channels, Arc, Mutex
-- **Smart Pointers** - Box, Rc, RefCell, Arc
-- **Iterators** - Iterator trait and adapters
-- **Closures** - Anonymous functions and capture
-- **Pattern Matching** - Match expressions and destructuring
+## Setup Details
 
-## Project Structure
+See [CLIPROXYAPI_SETUP.md](CLIPROXYAPI_SETUP.md) for detailed setup instructions.
+
+## Output Files
+
+The system creates:
+- `data/questions.txt` - Generated questions
+- `data/answers.txt` - Detailed answers with code examples
+- `data/knowledge_base.json` - YOUR agent's learned knowledge
+
+## Previous Versions
+
+- **v1.0.0** - Architecture documentation
+- **v2.0.0** - Rust Book learning system
+- **v3.0.0** - Spawned Claude Code agents (deprecated)
+- **v4.0.0** - CLIProxyAPI system (current) ⭐
+
+## Benefits Over Previous Versions
+
+**v3.0.0 (Spawned Agents):**
+- ❌ Limited by Claude Code session limits
+- ❌ Couldn't run long sessions
+- ❌ Complex spawning logic
+
+**v4.0.0 (CLIProxyAPI):**
+- ✅ Use your Claude Max subscription directly
+- ✅ No session limits
+- ✅ Simple HTTP API calls
+- ✅ Works like any API but uses Max
+
+## Troubleshooting
+
+### CLIProxyAPI Not Running
 
 ```
-rust_agent/
-├── Cargo.toml              # Project manifest
-├── README.md               # This file
-├── architecture/           # Architecture documentation
-│   ├── system-overview.md
-│   ├── components.md
-│   ├── data-flow.md
-│   ├── learning-cycle.md
-│   ├── file-structure.md
-│   └── implementation-plan.md
-├── src/
-│   ├── main.rs            # Entry point and orchestrator
-│   ├── types.rs           # Data structures
-│   ├── question_agent.rs  # Question generation agent
-│   ├── answer_agent.rs    # Answer generation agent
-│   └── learning_agent.rs  # Learning and knowledge management
-└── data/                  # Runtime data (created on first run)
-    ├── questions.txt
-    ├── answers.txt
-    └── knowledge_base.json
+Error: CLIProxyAPI not running on localhost:8000
 ```
+
+**Solution:** Start CLIProxyAPI first:
+```bash
+cd cliproxyapi
+npm start
+```
+
+### Authentication Issues
+
+1. Stop the proxy
+2. Clear browser cookies for Claude
+3. Restart and re-authenticate
 
 ## Architecture
 
-For detailed architecture documentation, see the [`architecture/`](architecture/) directory:
-
-- [System Overview](architecture/system-overview.md) - High-level design
-- [Components](architecture/components.md) - Agent descriptions
-- [Data Flow](architecture/data-flow.md) - How data moves through the system
-- [Learning Cycle](architecture/learning-cycle.md) - Teaching mechanism details
-- [File Structure](architecture/file-structure.md) - Project organization
-- [Implementation Plan](architecture/implementation-plan.md) - Development roadmap
+Detailed architecture docs in `architecture/` directory:
+- [System Overview](architecture/system-overview.md)
+- [Components](architecture/components.md)
+- [Data Flow](architecture/data-flow.md)
 
 ## Development Status
 
-**Current Version:** v0.1.0-wip (Work in Progress)
+**Current:** v4.0.0 - CLIProxyAPI Integration
 
-✅ **Completed:**
-- Core architecture design
-- Three-agent system implementation
-- Concurrent execution with Tokio
-- File-based Q&A exchange
-- Knowledge extraction and storage
-- Pattern recognition
-- 15 topic categories with questions and answers
-
-🚧 **Future Enhancements:**
-- Project generation from learned knowledge
-- Code template system
-- Advanced pattern matching
-- Multi-threaded learning optimization
-- Web interface for monitoring
-- Knowledge base export/import
-
-## Technical Details
-
-### Dependencies
-
-- **tokio** - Async runtime for concurrent agents
-- **serde** - Serialization framework
-- **serde_json** - JSON support for knowledge base
-- **chrono** - Timestamp handling
-- **anyhow** - Error handling
-
-### Performance
-
-- **Update Frequency:** 2 seconds per agent cycle
-- **Memory Usage:** Low (stores Q&A pairs and patterns in memory)
-- **Disk Usage:** Grows with learning (approximately 2-3 KB per Q&A pair)
-
-## Contributing
-
-This is a work-in-progress experimental project. Contributions, ideas, and feedback are welcome!
+✅ **Working:**
+- CLIProxyAPI integration
+- Question generation via Claude Max
+- Answer generation via Claude Max
+- Local learning agent (YOUR agent)
+- Knowledge storage without APIs
 
 ## License
 
-This project is open source and available under the MIT License.
+MIT License
 
 ## Acknowledgments
 
-Built with ❤️ using Rust and Claude Sonnet 4.5
+Built with:
+- Rust 🦀
+- CLIProxyAPI (Anthropic)
+- Claude Max subscription
+- Claude Sonnet 4.5
 
 ---
 
-**Status:** 🚧 Architecture Complete - Implementation Phase 1 Complete - v0.1.0-wip
-
-For questions or issues, please open an issue on GitHub.
+**Your agent learns from Claude Max without API costs!** 🎓✨
