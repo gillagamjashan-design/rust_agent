@@ -41,11 +41,13 @@ impl ClaudeProxy {
     }
 
     pub async fn generate_question(&self, topic: &str) -> Result<String> {
+        let topic_display = topic.replace('_', " ");
         let prompt = format!(
-            "Generate ONE practical programming question about {}. \
-            Topics: Linux, git, gh CLI, bash, networking, Docker. \
-            Just return the question text, no formatting.",
-            topic
+            "Generate ONE practical Rust programming question about {}. \
+            The question MUST be about Rust programming language ONLY. \
+            Focus on real-world Rust coding scenarios, best practices, and common patterns. \
+            Just return the question text, no formatting or markdown.",
+            topic_display
         );
 
         self.send_request(prompt).await
@@ -53,12 +55,15 @@ impl ClaudeProxy {
 
     pub async fn generate_answer(&self, question: &str) -> Result<String> {
         let prompt = format!(
-            "Answer this question with a detailed explanation and code example:\n\n\
+            "Answer this Rust programming question with a detailed explanation and Rust code example:\n\n\
             {}\n\n\
+            IMPORTANT: Your answer MUST include Rust code examples ONLY. No other programming languages.\n\
             Format:\n\
             [Explanation]\n\n\
-            [CODE_EXAMPLE_1]\n\
-            [code here]\n\
+            [CODE_EXAMPLE]\n\
+            ```rust\n\
+            // Rust code here\n\
+            ```\n\
             [/CODE_EXAMPLE]",
             question
         );

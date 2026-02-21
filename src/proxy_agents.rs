@@ -22,8 +22,10 @@ impl ProxyQuestionAgent {
             question_count: 0,
             output_file: output_path,
             topics: vec![
-                "Linux", "Git", "GitHub_CLI", "Bash",
-                "Networking", "Docker", "System", "Packages",
+                "Rust_Basics", "Ownership_and_Borrowing", "Lifetimes", "Traits",
+                "Error_Handling", "Async_Await", "Macros", "Cargo",
+                "Collections", "Pattern_Matching", "Generics", "Testing",
+                "Concurrency", "Smart_Pointers", "Iterators", "Modules",
             ],
             current_topic_index: 0,
         }
