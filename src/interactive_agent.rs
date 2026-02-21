@@ -1,18 +1,47 @@
+use crate::cache::SearchCache;
 use crate::claude_proxy::ClaudeProxy;
-use crate::types::KnowledgeBase;
+use crate::config::Config;
+use crate::types::{KnowledgeBase, SearchResult};
+use crate::web_search::DuckDuckGoClient;
 use anyhow::Result;
 use std::io::{self, Write};
 
 pub struct InteractiveAgent {
     claude: ClaudeProxy,
     knowledge_base: Option<KnowledgeBase>,
+    web_search: Option<DuckDuckGoClient>,
+    config: Config,
+    cache: SearchCache,
 }
 
 impl InteractiveAgent {
     pub fn new() -> Self {
+        // Load config
+        let config = Config::load().unwrap_or_default();
+
+        // Get cache directory
+        let home_dir = dirs::home_dir().expect("Cannot find home directory");
+        let cache_dir = home_dir.join(".agent").join("cache");
+
+        // Initialize cache
+        let cache = SearchCache::new(
+            cache_dir,
+            config.web_search.cache_ttl_hours as i64,
+        ).expect("Failed to create search cache");
+
+        // Create web search client if enabled
+        let web_search = if config.web_search.enabled {
+            DuckDuckGoClient::new().ok()
+        } else {
+            None
+        };
+
         Self {
             claude: ClaudeProxy::new(),
             knowledge_base: None,
+            web_search,
+            config,
+            cache,
         }
     }
 
@@ -65,10 +94,12 @@ impl InteractiveAgent {
         println!("  • Solving programming problems");
         println!();
         println!("Commands:");
-        println!("  /help    - Show this help");
-        println!("  /stats   - Show knowledge statistics");
-        println!("  /search  - Search knowledge base");
-        println!("  /quit    - Exit");
+        println!("  /help         - Show this help");
+        println!("  /stats        - Show knowledge statistics");
+        println!("  /search       - Search knowledge base");
+        println!("  /web <query>  - Force web search");
+        println!("  /cache clear  - Clear search cache");
+        println!("  /quit         - Exit");
         println!();
         println!("Type your question or command:");
         println!("════════════════════════════════════════════════════════════════");
@@ -94,9 +125,20 @@ impl InteractiveAgent {
                 }
                 "/help" => self.show_help(),
                 "/stats" => self.show_stats(),
+                "/cache clear" => {
+                    if let Err(e) = self.cache.clear() {
+                        println!("❌ Failed to clear cache: {}", e);
+                    } else {
+                        println!("✅ Search cache cleared");
+                    }
+                }
                 cmd if cmd.starts_with("/search ") => {
                     let query = &cmd[8..];
                     self.search_knowledge(query);
+                }
+                cmd if cmd.starts_with("/web ") => {
+                    let query = &cmd[5..];
+                    self.handle_web_search(query).await?;
                 }
                 _ => {
                     self.handle_question(input).await?;
@@ -112,6 +154,8 @@ impl InteractiveAgent {
         println!("  /help              - Show this help message");
         println!("  /stats             - Display knowledge statistics");
         println!("  /search <query>    - Search your knowledge base");
+        println!("  /web <query>       - Force web search for latest information");
+        println!("  /cache clear       - Clear web search cache");
         println!("  /quit              - Exit interactive mode");
         println!("\n💡 Usage:");
         println!("  Just type your question or request, and I'll help you!");
@@ -119,6 +163,12 @@ impl InteractiveAgent {
         println!("    - How do I create a git branch?");
         println!("    - Write a bash script to backup files");
         println!("    - Explain docker containers");
+        println!("\n🌐 Web Search:");
+        if self.config.web_search.enabled {
+            println!("  Enabled - I'll search the web if needed");
+        } else {
+            println!("  Disabled - Only using knowledge base");
+        }
     }
 
     fn show_stats(&self) {
@@ -187,34 +237,29 @@ impl InteractiveAgent {
     async fn handle_question(&mut self, question: &str) -> Result<()> {
         println!("\n🤔 Processing your request...\n");
 
-        // Check if question is in knowledge base first
+        // Tier 1: Search knowledge base
         let kb_answer = self.search_in_knowledge(question);
 
-        // Build context from knowledge base
-        let context = if let Some(kb) = &self.knowledge_base {
-            format!(
-                "You are a programming assistant with knowledge from {} Q&A pairs. \
-                Use your learned knowledge to help answer questions.\n\n",
-                kb.qa_pairs.len()
-            )
+        // Tier 2: Search web if needed and enabled
+        let web_results = if kb_answer.is_none() && self.web_search.is_some() {
+            self.search_web(question).await.ok()
         } else {
-            String::new()
+            None
         };
 
-        // Add knowledge base answer if found
-        let full_prompt = if let Some(kb_ans) = kb_answer {
-            format!("{}Based on my knowledge base:\n{}\n\nUser question: {}\n\nProvide a helpful answer:",
-                context, kb_ans, question)
-        } else {
-            format!("{}User question: {}\n\nProvide a helpful answer with code examples if relevant:",
-                context, question)
-        };
+        // Tier 3: Build context and send to Claude
+        let full_prompt = self.build_context(question, kb_answer.as_ref(), web_results.as_ref());
 
         // Get response from Claude via proxy
         match self.claude.send_request(full_prompt).await {
             Ok(response) => {
                 println!("💡 Answer:\n");
                 println!("{}", response);
+
+                // Show sources if from web search
+                if let Some(results) = web_results {
+                    self.show_sources(&results);
+                }
             }
             Err(e) => {
                 println!("❌ Error: {}", e);
@@ -224,6 +269,127 @@ impl InteractiveAgent {
         }
 
         Ok(())
+    }
+
+    async fn handle_web_search(&mut self, query: &str) -> Result<()> {
+        println!("\n🌐 Searching the web...\n");
+
+        match self.search_web(query).await {
+            Ok(results) => {
+                if results.is_empty() {
+                    println!("No web results found.");
+                } else {
+                    println!("Found {} results:\n", results.len());
+                    for (i, result) in results.iter().enumerate() {
+                        println!("{}. {}", i + 1, result.title);
+                        println!("   {}", result.url);
+                        println!("   {}\n", result.snippet);
+                    }
+                }
+            }
+            Err(e) => {
+                println!("❌ Web search failed: {}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn search_web(&mut self, query: &str) -> Result<Vec<SearchResult>> {
+        // Check cache first
+        if let Some(cached_response) = self.cache.get(query) {
+            println!("📦 Using cached results");
+            return Ok(cached_response.results);
+        }
+
+        // Enhance query if Rust-focused (always enhance for Rust questions)
+        let search_query_str = if self.is_rust_question(query) {
+            format!("Rust programming {}", query)
+        } else {
+            query.to_string()
+        };
+
+        // Perform web search
+        if let Some(client) = &self.web_search {
+            println!("🌐 Searching the web...");
+
+            // Create SearchQuery with max_results from config
+            let search_query = crate::web_search::SearchQuery::new(search_query_str)
+                .with_max_results(self.config.web_search.max_results);
+
+            let response = client.search(&search_query).await?;
+
+            // Cache the full response
+            let _ = self.cache.set(query, response.clone());
+
+            Ok(response.results)
+        } else {
+            Err(anyhow::anyhow!("Web search is disabled"))
+        }
+    }
+
+    fn build_context(&self, question: &str, kb_answer: Option<&String>, web_results: Option<&Vec<SearchResult>>) -> String {
+        let mut context = String::new();
+
+        // Base context
+        if let Some(kb) = &self.knowledge_base {
+            context.push_str(&format!(
+                "You are a Rust programming assistant with knowledge from {} Q&A pairs.\n\n",
+                kb.qa_pairs.len()
+            ));
+        } else {
+            context.push_str("You are a Rust programming assistant.\n\n");
+        }
+
+        // Add knowledge base answer if found
+        if let Some(kb_ans) = kb_answer {
+            context.push_str("From your knowledge base:\n");
+            context.push_str(kb_ans);
+            context.push_str("\n\n");
+        }
+
+        // Add web results if available
+        if let Some(results) = web_results {
+            if !results.is_empty() {
+                context.push_str("Additional information from the web:\n");
+                for (i, result) in results.iter().enumerate() {
+                    context.push_str(&format!(
+                        "{}. {} ({})\n   {}\n\n",
+                        i + 1,
+                        result.title,
+                        result.url,
+                        result.snippet
+                    ));
+                }
+            }
+        }
+
+        // Add the user question
+        context.push_str(&format!("User question: {}\n\n", question));
+        context.push_str("Provide a helpful, accurate answer with code examples if relevant. ");
+        context.push_str("Focus on Rust programming best practices.");
+
+        context
+    }
+
+    fn show_sources(&self, results: &[SearchResult]) {
+        if !results.is_empty() {
+            println!("\n📚 Sources:");
+            for result in results {
+                println!("  • {} - {}", result.title, result.url);
+            }
+        }
+    }
+
+    fn is_rust_question(&self, question: &str) -> bool {
+        let rust_keywords = [
+            "rust", "cargo", "crate", "trait", "impl", "borrow", "lifetime",
+            "ownership", "mut", "unsafe", "async", "await", "tokio", "serde",
+            "match", "enum", "struct", "mod", "pub", "fn", "let", "const",
+        ];
+
+        let question_lower = question.to_lowercase();
+        rust_keywords.iter().any(|&keyword| question_lower.contains(keyword))
     }
 
     fn search_in_knowledge(&self, query: &str) -> Option<String> {

@@ -1,0 +1,21 @@
+# Rust Learning Agent Configuration
+# Copy this file to ~/.agent/config.toml and customize as needed
+
+[web_search]
+# Enable or disable web search functionality
+enabled = true
+
+# Cache time-to-live in hours (how long to keep cached search results)
+cache_ttl_hours = 24
+
+# Request timeout in seconds (maximum time to wait for search results)
+timeout_seconds = 10
+
+# Maximum number of search results to retrieve per query
+max_results = 5
+
+[api_keys]
+# Serper API key for web search (optional)
+# Get your API key from https://serper.dev/
+# If not provided, web search features will be disabled
+# serper = "your-serper-api-key-here"

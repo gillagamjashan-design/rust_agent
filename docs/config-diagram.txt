@@ -1,0 +1,130 @@
+Configuration System Architecture
+═════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────┐
+│                        User Level                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ~/.agent/config.toml  (User's configuration file)         │
+│  ├── [web_search]                                          │
+│  │   ├── enabled = true                                    │
+│  │   ├── cache_ttl_hours = 24                              │
+│  │   ├── timeout_seconds = 10                              │
+│  │   └── max_results = 5                                   │
+│  └── [api_keys]                                            │
+│      └── serper = "optional-api-key"                       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                           ▲
+                           │ Config::load()
+                           │
+┌─────────────────────────────────────────────────────────────┐
+│                    Application Level                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Config Struct (src/config.rs)                             │
+│  ├── web_search: WebSearchConfig                           │
+│  │   ├── enabled: bool                                     │
+│  │   ├── cache_ttl_hours: u32                              │
+│  │   ├── timeout_seconds: u64                              │
+│  │   └── max_results: usize                                │
+│  └── api_keys: ApiKeys                                     │
+│      └── serper: Option<String>                            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                           │
+            ┌──────────────┼──────────────┐
+            │              │              │
+            ▼              ▼              ▼
+┌─────────────────┐ ┌──────────────┐ ┌─────────────────┐
+│ Interactive     │ │ Search       │ │ Web Search      │
+│ Agent           │ │ Cache        │ │ Client          │
+├─────────────────┤ ├──────────────┤ ├─────────────────┤
+│ • Enable/       │ │ • Cache TTL  │ │ • Max results   │
+│   disable web   │ │   from       │ │   limit         │
+│   search        │ │   config     │ │ • Timeout       │
+│ • Load on       │ │ • Auto       │ │   setting       │
+│   startup       │ │   cleanup    │ │                 │
+└─────────────────┘ └──────────────┘ └─────────────────┘
+
+                    Data Flow
+═════════════════════════════════════════════════════════════════
+
+1. Application Startup
+   ┌──────────────────────────────────────────────────────┐
+   │  main() or InteractiveAgent::new()                   │
+   │         │                                             │
+   │         ├─> Config::load()                            │
+   │         │   ├─> Check ~/.agent/config.toml exists?   │
+   │         │   ├─> Yes: Parse TOML → Config struct      │
+   │         │   └─> No: Return Config::default()         │
+   │         │                                             │
+   │         └─> Use config values to initialize:         │
+   │             ├─> SearchCache (with TTL)               │
+   │             ├─> WebSearchClient (with max results)   │
+   │             └─> Enable/disable features              │
+   └──────────────────────────────────────────────────────┘
+
+2. Configuration Update (Optional)
+   ┌──────────────────────────────────────────────────────┐
+   │  User modifies config                                │
+   │         │                                             │
+   │         ├─> Edit ~/.agent/config.toml manually       │
+   │         └─> Or: config.save() from code              │
+   │                                                       │
+   │  Restart application to apply changes                │
+   └──────────────────────────────────────────────────────┘
+
+                Directory Structure
+═════════════════════════════════════════════════════════════════
+
+~/.agent/
+├── config.toml              ← Configuration file
+│                             
+├── cache/                   ← Web search cache
+│   ├── search_abc123.json   ← TTL from config
+│   ├── search_def456.json
+│   └── search_ghi789.json
+│
+└── data/                    ← Learning data
+    ├── questions.txt
+    ├── answers.txt
+    └── knowledge_base.json
+
+                Error Handling
+═════════════════════════════════════════════════════════════════
+
+Config::load() handles all errors gracefully:
+
+┌─────────────────────────────────────────────────────────────┐
+│  Scenario                     │  Behavior                    │
+├───────────────────────────────┼──────────────────────────────┤
+│  Config file missing          │  Use defaults, print message │
+│  Invalid TOML syntax          │  Return error with details   │
+│  Missing fields               │  Use default for that field  │
+│  Cannot create ~/.agent/      │  Return error with details   │
+│  Permission denied            │  Return error with details   │
+└─────────────────────────────────────────────────────────────┘
+
+                Usage Examples
+═════════════════════════════════════════════════════════════════
+
+1. Load and use configuration:
+   
+   let config = Config::load()?;
+   if config.web_search.enabled {
+       // Enable web search features
+   }
+
+2. Create custom configuration:
+   
+   let mut config = Config::default();
+   config.web_search.max_results = 10;
+   config.save()?;
+
+3. Check API keys:
+   
+   if let Some(key) = &config.api_keys.serper {
+       // Use Serper API
+   }
+

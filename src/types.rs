@@ -81,3 +81,6 @@ impl Default for KnowledgeBase {
         Self::new()
     }
 }
+
+// Re-export web search types for convenience
+pub use crate::web_search::{SearchProvider, SearchQuery, SearchResponse, SearchResult};
