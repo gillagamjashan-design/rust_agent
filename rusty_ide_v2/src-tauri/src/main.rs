@@ -4,7 +4,6 @@ mod agent_bridge;
 mod agent_manager;
 mod app;
 mod file_manager;
-mod terminal_manager;
 mod ui;
 
 use anyhow::Result;
@@ -100,10 +99,7 @@ async fn main() -> Result<()> {
 
         // Tick
         if last_tick.elapsed() >= tick_rate {
-            // Update terminal output
-            if let Err(e) = app.update_terminal() {
-                app.status_message = format!("Terminal error: {}", e);
-            }
+            // Tick handler - nothing to do for now
             last_tick = Instant::now();
         }
     };

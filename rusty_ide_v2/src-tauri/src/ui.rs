@@ -23,15 +23,13 @@ pub fn render(f: &mut Frame, app: &App) {
         .constraints([
             Constraint::Length(3),  // Title
             Constraint::Min(0),     // Main content
-            Constraint::Length(10), // Terminal
             Constraint::Length(3),  // Status
         ])
         .split(f.size());
 
     render_title(f, chunks[0], app);
     render_main(f, chunks[1], app);
-    render_terminal(f, chunks[2], app);
-    render_status(f, chunks[3], app);
+    render_status(f, chunks[2], app);
 }
 
 fn render_title(f: &mut Frame, area: Rect, app: &App) {
@@ -68,8 +66,8 @@ fn render_main(f: &mut Frame, area: Rect, app: &App) {
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Percentage(20), // File tree
-            Constraint::Percentage(50), // Editor
-            Constraint::Percentage(30), // Agent
+            Constraint::Percentage(40), // Editor (wider now)
+            Constraint::Percentage(40), // Agent (wider now)
         ])
         .split(area);
 
@@ -225,55 +223,6 @@ fn render_agent(f: &mut Frame, area: Rect, app: &App) {
         .style(Style::default().bg(BG).fg(FG));
 
     f.render_widget(input, chunks[1]);
-}
-
-fn render_terminal(f: &mut Frame, area: Rect, app: &App) {
-    let border_style = if app.focused_panel == Panel::Terminal {
-        Style::default().fg(KEYWORD)
-    } else {
-        Style::default().fg(BORDER)
-    };
-
-    // Split terminal: output (top) + input (bottom)
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(0),     // Output
-            Constraint::Length(3),  // Input line
-        ])
-        .split(area);
-
-    // Render output
-    let output = app.terminal_output.join("");
-
-    let terminal_output = Paragraph::new(output)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(border_style)
-                .title(" Terminal "),
-        )
-        .style(Style::default().bg(BG).fg(FG))
-        .wrap(Wrap { trim: false });
-
-    f.render_widget(terminal_output, chunks[0]);
-
-    // Render input line with cursor
-    let input_text = if app.mode == Mode::Insert && app.focused_panel == Panel::Terminal {
-        format!("$ {}█", app.terminal_input)
-    } else {
-        format!("$ {}", app.terminal_input)
-    };
-
-    let terminal_input = Paragraph::new(input_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(border_style),
-        )
-        .style(Style::default().bg(BG).fg(FG));
-
-    f.render_widget(terminal_input, chunks[1]);
 }
 
 fn render_status(f: &mut Frame, area: Rect, app: &App) {

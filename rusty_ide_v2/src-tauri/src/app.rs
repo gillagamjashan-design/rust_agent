@@ -1,6 +1,5 @@
 use crate::agent_manager::AgentManager;
 use crate::file_manager::FileManager;
-use crate::terminal_manager::TerminalManager;
 use anyhow::Result;
 use crossterm::event::{KeyEvent, MouseEvent, MouseEventKind, MouseButton};
 use std::path::PathBuf;
@@ -11,7 +10,6 @@ pub enum Panel {
     FileTree,
     Editor,
     Agent,
-    Terminal,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -23,7 +21,6 @@ pub enum Mode {
 
 pub struct App {
     pub file_manager: FileManager,
-    pub terminal_manager: TerminalManager,
     pub agent_manager: AgentManager,
     pub current_file: Option<PathBuf>,
     pub current_content: String,
@@ -37,11 +34,9 @@ pub struct App {
     pub current_directory: PathBuf,
     pub agent_query: String,
     pub agent_response: String,
-    pub terminal_output: Vec<String>,
     pub scroll_offset: usize,
     // New fields for VS Code-style input handling
     pub agent_input: String,
-    pub terminal_input: String,
     pub agent_chat_history: Vec<(bool, String)>, // (is_user, message)
     pub file_tree_selected: usize,
     // Mouse tracking
@@ -64,7 +59,6 @@ impl App {
 
         Ok(Self {
             file_manager: FileManager::new()?,
-            terminal_manager: TerminalManager::new()?,
             agent_manager: AgentManager::new()?,
             current_file: None,
             current_content: String::new(),
@@ -78,10 +72,8 @@ impl App {
             current_directory: work_dir,
             agent_query: String::new(),
             agent_response: String::new(),
-            terminal_output: Vec::new(),
             scroll_offset: 0,
             agent_input: String::new(),
-            terminal_input: String::new(),
             agent_chat_history: Vec::new(),
             file_tree_selected: 0,
             last_click: None,
@@ -133,8 +125,7 @@ impl App {
                         self.focused_panel = match self.focused_panel {
                             Panel::FileTree => Panel::Editor,
                             Panel::Editor => Panel::Agent,
-                            Panel::Agent => Panel::Terminal,
-                            Panel::Terminal => Panel::FileTree,
+                            Panel::Agent => Panel::FileTree,
                         };
                     }
                     // Arrow keys for file tree navigation (more intuitive)
@@ -159,7 +150,7 @@ impl App {
                     // Enter/i in other panels enters Insert mode
                     KeyCode::Char('i') | KeyCode::Enter => {
                         match self.focused_panel {
-                            Panel::Editor | Panel::Agent | Panel::Terminal => {
+                            Panel::Editor | Panel::Agent => {
                                 self.mode = Mode::Insert;
                             }
                             _ => {}
@@ -174,9 +165,6 @@ impl App {
                     }
                     KeyCode::Char('a') => {
                         self.focused_panel = Panel::Agent;
-                    }
-                    KeyCode::Char('t') => {
-                        self.focused_panel = Panel::Terminal;
                     }
                     KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         if let Err(e) = self.save_file() {
@@ -201,11 +189,6 @@ impl App {
                                     self.status_message = format!("Error sending to agent: {}", e);
                                 }
                             }
-                            Panel::Terminal => {
-                                if let Err(e) = self.execute_terminal_command() {
-                                    self.status_message = format!("Error executing command: {}", e);
-                                }
-                            }
                             _ => {}
                         }
                     }
@@ -217,9 +200,6 @@ impl App {
                             Panel::Agent => {
                                 self.agent_input.push(c);
                             }
-                            Panel::Terminal => {
-                                self.terminal_input.push(c);
-                            }
                             _ => {}
                         }
                     }
@@ -230,9 +210,6 @@ impl App {
                             }
                             Panel::Agent => {
                                 self.agent_input.pop();
-                            }
-                            Panel::Terminal => {
-                                self.terminal_input.pop();
                             }
                             _ => {}
                         }
@@ -309,6 +286,7 @@ impl App {
 
     pub async fn send_to_agent(&mut self) -> Result<()> {
         if self.agent_input.trim().is_empty() {
+            self.status_message = "Please enter a message for the agent".to_string();
             return Ok(());
         }
 
@@ -316,33 +294,29 @@ impl App {
         self.agent_chat_history.push((true, user_message.clone()));
         self.agent_input.clear();
 
-        self.status_message = "Sending to agent...".to_string();
+        self.status_message = "🤖 Sending to agent... (this may take a moment)".to_string();
 
-        match self.agent_manager.query(user_message).await {
-            Ok(response) => {
+        // Add timeout to prevent hanging
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(60),
+            self.agent_manager.query(user_message)
+        ).await {
+            Ok(Ok(response)) => {
                 self.agent_chat_history.push((false, response.clone()));
                 self.agent_response = response;
-                self.status_message = "Agent response received".to_string();
+                self.status_message = "✓ Agent response received".to_string();
             }
-            Err(e) => {
-                let error_msg = format!("Error: {}", e);
+            Ok(Err(e)) => {
+                let error_msg = format!("Agent error: {}", e);
                 self.agent_chat_history.push((false, error_msg.clone()));
                 self.status_message = error_msg;
             }
+            Err(_) => {
+                let timeout_msg = "Agent query timed out after 60 seconds. Please try again.".to_string();
+                self.agent_chat_history.push((false, timeout_msg.clone()));
+                self.status_message = timeout_msg;
+            }
         }
-
-        Ok(())
-    }
-
-    pub fn execute_terminal_command(&mut self) -> Result<()> {
-        if self.terminal_input.trim().is_empty() {
-            return Ok(());
-        }
-
-        let command = format!("{}\n", self.terminal_input);
-        self.terminal_input.clear();
-
-        self.terminal_manager.write(&command)?;
 
         Ok(())
     }
@@ -364,17 +338,6 @@ impl App {
         Ok(())
     }
 
-    pub fn update_terminal(&mut self) -> Result<()> {
-        if let Some(output) = self.terminal_manager.read()? {
-            self.terminal_output.push(output);
-            // Keep only last 1000 lines
-            if self.terminal_output.len() > 1000 {
-                self.terminal_output.drain(0..self.terminal_output.len() - 1000);
-            }
-        }
-        Ok(())
-    }
-
     pub fn handle_mouse(&mut self, mouse: MouseEvent) -> Result<()> {
         match mouse.kind {
             MouseEventKind::Down(MouseButton::Left) => {
@@ -383,21 +346,18 @@ impl App {
 
                 // Calculate panel boundaries based on layout
                 // Title: rows 0-2 (height 3)
-                // Main area: rows 3 to terminal_start
-                // Terminal: 10 rows before status
+                // Main area: rows 3 to status
                 // Status: last 3 rows
 
                 let title_height = 3;
                 let status_height = 3;
-                let terminal_height = 10;
 
                 let main_area_start = title_height;
-                let terminal_start = self.terminal_height.saturating_sub(status_height + terminal_height);
-                let main_area_end = terminal_start;
+                let main_area_end = self.terminal_height.saturating_sub(status_height);
 
-                // File tree is 20% of width, Editor is 50%, Agent is 30%
+                // File tree is 20% of width, Editor is 40%, Agent is 40%
                 let file_tree_width = (self.terminal_width * 20) / 100;
-                let editor_width = (self.terminal_width * 50) / 100;
+                let editor_width = (self.terminal_width * 40) / 100;
                 let file_tree_end = file_tree_width;
                 let editor_end = file_tree_width + editor_width;
 
@@ -438,26 +398,12 @@ impl App {
                         self.mode = Mode::Insert;
                         self.last_click = Some((col, row, Instant::now()));
                     } else {
-                        // Agent panel clicked
+                        // Agent panel clicked - always enter Insert mode so user can type
                         self.focused_panel = Panel::Agent;
-
-                        // Check if clicked in agent input area (bottom 3 rows of agent panel)
-                        let agent_input_start = main_area_end.saturating_sub(4);
-                        if row >= agent_input_start {
-                            self.mode = Mode::Insert;
-                        }
+                        self.mode = Mode::Insert;
+                        self.status_message = "Type your message and press Enter to send".to_string();
                         self.last_click = Some((col, row, Instant::now()));
                     }
-                } else if row >= terminal_start && row < self.terminal_height.saturating_sub(status_height) {
-                    // Terminal area clicked
-                    self.focused_panel = Panel::Terminal;
-
-                    // Check if clicked in terminal input area (bottom 3 rows of terminal)
-                    let terminal_input_start = self.terminal_height.saturating_sub(status_height + 4);
-                    if row >= terminal_input_start {
-                        self.mode = Mode::Insert;
-                    }
-                    self.last_click = Some((col, row, Instant::now()));
                 }
             }
             _ => {}
