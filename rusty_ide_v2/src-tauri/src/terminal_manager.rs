@@ -4,13 +4,15 @@ use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::thread;
 use uuid::Uuid;
 
 pub struct TerminalInstance {
     id: String,
     master: Box<dyn MasterPty + Send>,
     writer: Box<dyn Write + Send>,
-    reader: Arc<Mutex<Box<dyn Read + Send>>>,
+    output_buffer: Arc<Mutex<Vec<String>>>,
+    _reader_thread: Option<thread::JoinHandle<()>>,
 }
 
 impl TerminalInstance {
@@ -45,7 +47,7 @@ impl TerminalInstance {
             .context("Failed to spawn shell")?;
 
         // Get reader and writer
-        let reader = pair
+        let mut reader = pair
             .master
             .try_clone_reader()
             .context("Failed to clone reader")?;
@@ -54,11 +56,35 @@ impl TerminalInstance {
             .take_writer()
             .context("Failed to get writer")?;
 
+        // Create output buffer for non-blocking reads
+        let output_buffer = Arc::new(Mutex::new(Vec::new()));
+        let buffer_clone = output_buffer.clone();
+
+        // Spawn a background thread to read terminal output
+        let reader_thread = thread::spawn(move || {
+            let mut buf = [0u8; 4096];
+            loop {
+                match reader.read(&mut buf) {
+                    Ok(0) => break, // EOF
+                    Ok(n) => {
+                        let data = String::from_utf8_lossy(&buf[..n]).to_string();
+                        buffer_clone.lock().push(data);
+                    }
+                    Err(e) => {
+                        if e.kind() != std::io::ErrorKind::Interrupted {
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
         Ok(Self {
             id,
             master: pair.master,
             writer,
-            reader: Arc::new(Mutex::new(reader)),
+            output_buffer,
+            _reader_thread: Some(reader_thread),
         })
     }
 
@@ -67,18 +93,14 @@ impl TerminalInstance {
     }
 
     pub fn read(&self) -> Result<Option<String>> {
-        let mut buffer = [0u8; 8192];
-        let mut reader = self.reader.lock();
-
-        // Set non-blocking mode for reading
-        match reader.read(&mut buffer) {
-            Ok(n) if n > 0 => {
-                let data = String::from_utf8_lossy(&buffer[..n]).to_string();
-                Ok(Some(data))
-            }
-            Ok(_) => Ok(None),
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
-            Err(e) => Err(anyhow::Error::from(e)),
+        // Non-blocking read from the output buffer (filled by background thread)
+        let mut buffer = self.output_buffer.lock();
+        if buffer.is_empty() {
+            Ok(None)
+        } else {
+            // Drain all buffered output
+            let output = buffer.drain(..).collect::<Vec<_>>().join("");
+            Ok(Some(output))
         }
     }
 
@@ -116,8 +138,15 @@ pub struct TerminalManager {
 impl TerminalManager {
     pub fn new() -> Result<Self> {
         let mut terminals = Vec::new();
-        // Create initial terminal
-        terminals.push(TerminalInstance::new()?);
+
+        // Try to create initial terminal, but don't fail if PTY isn't available
+        match TerminalInstance::new() {
+            Ok(terminal) => terminals.push(terminal),
+            Err(e) => {
+                eprintln!("Warning: Could not create terminal: {}", e);
+                // Continue without terminal - app will still work
+            }
+        }
 
         Ok(Self {
             terminals: Arc::new(Mutex::new(terminals)),

@@ -285,13 +285,13 @@ fn render_status(f: &mut Frame, area: Rect, app: &App) {
 
     let help = match app.mode {
         Mode::Normal => {
-            " [h/l/a/t] Switch Panel | [j/k] Navigate Tree | [i] Insert Mode | [Enter] Open File | [:] Command | [q] Quit "
+            " [Tab] Switch Panel | [j/k] Navigate Tree | [Enter/i] Start Typing | [Ctrl+S] Save | [Ctrl+Q] Quit | Click anywhere! "
         }
         Mode::Insert => {
-            " [Esc] Normal Mode | [Enter] Send/Execute | Type to input... "
+            " [Esc] Exit Insert Mode | [Enter] Send/Execute | Type to input... | Click to switch panels "
         }
         Mode::Command => {
-            " [Esc] Cancel | [Enter] Execute | Type command... "
+            " [Esc] Cancel | [Enter] Execute | Type command (q=quit, w=save, wq=save+quit, e <file>=open) "
         }
     };
 

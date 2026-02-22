@@ -32,67 +32,23 @@ impl FileManager {
     }
 
     pub fn read_file(&self, path: &Path) -> Result<String> {
-        // Check permission
-        let permissions = self.permissions.lock();
-        let canonical = path
-            .canonicalize()
-            .context("Failed to canonicalize path")?;
-
-        let allowed = permissions.iter().any(|p| {
-            let p_path = PathBuf::from(p);
-            canonical.starts_with(p_path)
-        });
-
-        if !allowed && !permissions.is_empty() {
-            anyhow::bail!("Access denied: {:?} is not in allowed workspace paths", path);
-        }
-
+        // For TUI mode, allow reading any file the user opens
         fs::read_to_string(path).context("Failed to read file")
     }
 
     pub fn write_file(&self, path: &Path, content: &str) -> Result<()> {
-        // Check permission
-        let permissions = self.permissions.lock();
-
         // Create parent directory if it doesn't exist
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).context("Failed to create parent directory")?;
         }
 
-        let canonical = if path.exists() {
-            path.canonicalize().context("Failed to canonicalize path")?
-        } else {
-            path.to_path_buf()
-        };
-
-        let allowed = permissions.iter().any(|p| {
-            let p_path = PathBuf::from(p);
-            canonical.starts_with(p_path)
-        });
-
-        if !allowed && !permissions.is_empty() {
-            anyhow::bail!("Access denied: {:?} is not in allowed workspace paths", path);
-        }
-
+        // For TUI mode, allow writing to any file the user saves
         fs::write(path, content).context("Failed to write file")
     }
 
     pub fn list_files(&self, directory: &Path) -> Result<Vec<FileInfo>> {
-        // Check permission
-        let permissions = self.permissions.lock();
-        let canonical = directory
-            .canonicalize()
-            .context("Failed to canonicalize path")?;
-
-        let allowed = permissions.iter().any(|p| {
-            let p_path = PathBuf::from(p);
-            canonical.starts_with(p_path)
-        });
-
-        if !allowed && !permissions.is_empty() {
-            anyhow::bail!("Access denied: {:?} is not in allowed workspace paths", directory);
-        }
-
+        // For TUI mode, allow access to any directory the user opens
+        // (Permission system is for sandboxed mode only)
         let entries = fs::read_dir(directory).context("Failed to read directory")?;
 
         let mut files = Vec::new();

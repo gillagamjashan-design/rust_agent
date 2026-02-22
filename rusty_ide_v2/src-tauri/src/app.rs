@@ -71,7 +71,7 @@ impl App {
             focused_panel: Panel::FileTree,
             mode: Mode::Normal,
             command_buffer: String::new(),
-            status_message: format!("Rusty TUI - Working directory: {}", work_dir.display()),
+            status_message: format!("Welcome to Rusty TUI! Click anywhere or press Tab to switch panels. Press Enter/i to start typing. Directory: {}", work_dir.display()),
             should_quit: false,
             file_tree_cursor: 0,
             file_tree_items: Vec::new(),
@@ -120,7 +120,7 @@ impl App {
         match self.mode {
             Mode::Normal => {
                 match key.code {
-                    KeyCode::Char('q') => {
+                    KeyCode::Char('q') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         self.should_quit = true;
                         return Ok(false);
                     }
@@ -128,18 +128,44 @@ impl App {
                         self.mode = Mode::Command;
                         self.command_buffer.clear();
                     }
-                    KeyCode::Char('i') => {
-                        // Enter insert mode for the currently focused panel
+                    // Tab to cycle through panels
+                    KeyCode::Tab => {
+                        self.focused_panel = match self.focused_panel {
+                            Panel::FileTree => Panel::Editor,
+                            Panel::Editor => Panel::Agent,
+                            Panel::Agent => Panel::Terminal,
+                            Panel::Terminal => Panel::FileTree,
+                        };
+                    }
+                    // Arrow keys for file tree navigation (more intuitive)
+                    KeyCode::Up | KeyCode::Char('k') if self.focused_panel == Panel::FileTree => {
+                        if self.file_tree_cursor > 0 {
+                            self.file_tree_cursor -= 1;
+                            self.file_tree_selected = self.file_tree_cursor;
+                        }
+                    }
+                    KeyCode::Down | KeyCode::Char('j') if self.focused_panel == Panel::FileTree => {
+                        if self.file_tree_cursor + 1 < self.file_tree_items.len() {
+                            self.file_tree_cursor += 1;
+                            self.file_tree_selected = self.file_tree_cursor;
+                        }
+                    }
+                    // Enter in FileTree opens file
+                    KeyCode::Enter if self.focused_panel == Panel::FileTree => {
+                        if let Err(e) = self.open_selected_file() {
+                            self.status_message = format!("Error: {}", e);
+                        }
+                    }
+                    // Enter/i in other panels enters Insert mode
+                    KeyCode::Char('i') | KeyCode::Enter => {
                         match self.focused_panel {
-                            Panel::Editor => {
-                                self.mode = Mode::Insert;
-                            }
-                            Panel::Agent | Panel::Terminal => {
+                            Panel::Editor | Panel::Agent | Panel::Terminal => {
                                 self.mode = Mode::Insert;
                             }
                             _ => {}
                         }
                     }
+                    // Vim-style panel navigation (keep for power users)
                     KeyCode::Char('h') => {
                         self.focused_panel = Panel::FileTree;
                     }
@@ -151,23 +177,6 @@ impl App {
                     }
                     KeyCode::Char('t') => {
                         self.focused_panel = Panel::Terminal;
-                    }
-                    KeyCode::Char('j') if self.focused_panel == Panel::FileTree => {
-                        if self.file_tree_cursor + 1 < self.file_tree_items.len() {
-                            self.file_tree_cursor += 1;
-                            self.file_tree_selected = self.file_tree_cursor;
-                        }
-                    }
-                    KeyCode::Char('k') if self.focused_panel == Panel::FileTree => {
-                        if self.file_tree_cursor > 0 {
-                            self.file_tree_cursor -= 1;
-                            self.file_tree_selected = self.file_tree_cursor;
-                        }
-                    }
-                    KeyCode::Enter if self.focused_panel == Panel::FileTree => {
-                        if let Err(e) = self.open_selected_file() {
-                            self.status_message = format!("Error: {}", e);
-                        }
                     }
                     KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         if let Err(e) = self.save_file() {
@@ -424,8 +433,9 @@ impl App {
                             }
                         }
                     } else if col >= file_tree_end && col < editor_end {
-                        // Editor clicked
+                        // Editor clicked - automatically enter Insert mode for typing
                         self.focused_panel = Panel::Editor;
+                        self.mode = Mode::Insert;
                         self.last_click = Some((col, row, Instant::now()));
                     } else {
                         // Agent panel clicked
