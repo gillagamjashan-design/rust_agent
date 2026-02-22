@@ -11,40 +11,86 @@ pub struct ProxyQuestionAgent {
     claude: ClaudeProxy,
     question_count: usize,
     output_file: PathBuf,
-    topics: Vec<&'static str>,
+    topics: Vec<(&'static str, u8)>,  // (topic, stage)
     current_topic_index: usize,
+    current_stage: u8,
 }
 
 impl ProxyQuestionAgent {
     pub fn new(output_path: PathBuf) -> Self {
+        // Topics organized by 5-stage curriculum
+        // Stage 1: Foundation (move semantics, basic borrowing)
+        // Stage 2: Borrowing Mastery (shared vs exclusive refs)
+        // Stage 3: Lifetime Patterns (explicit lifetimes)
+        // Stage 4: Advanced Ownership (Rc, Arc, RefCell)
+        // Stage 5: Systems Thinking (unsafe, raw pointers)
         Self {
             claude: ClaudeProxy::new(),
             question_count: 0,
             output_file: output_path,
             topics: vec![
-                "Rust_Basics", "Ownership_and_Borrowing", "Lifetimes", "Traits",
-                "Error_Handling", "Async_Await", "Macros", "Cargo",
-                "Collections", "Pattern_Matching", "Generics", "Testing",
-                "Concurrency", "Smart_Pointers", "Iterators", "Modules",
+                // Stage 1: Foundation
+                ("Move_Semantics", 1),
+                ("Basic_Borrowing", 1),
+                ("Ownership_Transfer", 1),
+                ("Stack_vs_Heap", 1),
+                ("Value_vs_Reference", 1),
+
+                // Stage 2: Borrowing Mastery
+                ("Shared_References", 2),
+                ("Mutable_References", 2),
+                ("Borrow_Checker_Rules", 2),
+                ("Multiple_Borrowing", 2),
+                ("Reference_Lifetime_Basics", 2),
+
+                // Stage 3: Lifetime Patterns
+                ("Explicit_Lifetimes", 3),
+                ("Struct_Lifetimes", 3),
+                ("Function_Lifetimes", 3),
+                ("Lifetime_Bounds", 3),
+                ("Lifetime_Elision", 3),
+
+                // Stage 4: Advanced Ownership
+                ("Rc_and_Arc", 4),
+                ("RefCell_Pattern", 4),
+                ("Interior_Mutability", 4),
+                ("Smart_Pointers", 4),
+                ("Weak_References", 4),
+
+                // Stage 5: Systems Thinking
+                ("Unsafe_Rust", 5),
+                ("Raw_Pointers", 5),
+                ("FFI_Patterns", 5),
+                ("Custom_Allocators", 5),
+                ("Unsafe_Abstractions", 5),
             ],
             current_topic_index: 0,
+            current_stage: 1,
         }
     }
 
     pub async fn run(&mut self) -> Result<()> {
         println!("🤔 Question Agent (CLIProxyAPI) - using Claude Max");
+        println!("📚 Teaching Protocol: 5-Stage Rust Mastery Curriculum");
 
         loop {
-            let topic = self.topics[self.current_topic_index];
+            let (topic, stage) = self.topics[self.current_topic_index];
             self.current_topic_index = (self.current_topic_index + 1) % self.topics.len();
+
+            // Update current stage based on progress
+            if self.current_topic_index == 0 {
+                // Cycle through stages every full rotation
+                self.current_stage = ((self.current_stage % 5) + 1).min(5);
+            }
 
             match self.claude.generate_question(topic).await {
                 Ok(text) => {
                     self.question_count += 1;
+                    let category = format!("Stage_{}_{}",  stage, topic);
                     let question = Question {
                         id: self.question_count,
                         text,
-                        category: topic.to_string(),
+                        category: category.clone(),
                         timestamp: Utc::now(),
                     };
 
@@ -57,7 +103,7 @@ impl ProxyQuestionAgent {
                         question.timestamp.format("%Y-%m-%d %H:%M:%S"),
                         question.id, question.text, question.category)?;
 
-                    println!("❓ Q{}: {}", question.id, question.text);
+                    println!("❓ [Stage {}] Q{}: {}", stage, question.id, question.text);
                 }
                 Err(e) => eprintln!("Error generating question: {}", e),
             }

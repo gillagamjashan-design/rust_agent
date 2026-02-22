@@ -1,0 +1,91 @@
+================================================================================
+                    RUSTY IDE v2 - QUICK START GUIDE
+================================================================================
+
+CHOOSE YOUR PLATFORM:
+────────────────────────────────────────────────────────────────────────────────
+
+┌─ WINDOWS ──────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  1. Right-click "install-windows.bat"                                      │
+│  2. Select "Run as administrator"                                          │
+│  3. Follow the prompts                                                     │
+│  4. Restart your terminal                                                  │
+│                                                                             │
+│  Installed to: C:\Program Files\Rusty\rusty.exe                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ macOS ────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  1. Open Terminal in the scripts folder                                    │
+│  2. Run: chmod +x install-mac.sh                                           │
+│  3. Run: ./install-mac.sh                                                  │
+│  4. Enter password when prompted                                           │
+│                                                                             │
+│  Installed to: /usr/local/bin/rusty                                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ LINUX ────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  1. Open terminal in the scripts folder                                    │
+│  2. Run: chmod +x install-linux.sh                                         │
+│  3. Run: ./install-linux.sh                                                │
+│  4. Restart your terminal or run: source ~/.bashrc                         │
+│                                                                             │
+│  Installed to: ~/.local/bin/rusty                                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+WHAT HAPPENS DURING INSTALLATION:
+────────────────────────────────────────────────────────────────────────────────
+
+  [1/5] CLEANUP      → Removes old agent binary and scripts
+  [2/5] BUILD        → Compiles Rusty IDE in release mode
+  [3/5] INSTALL      → Copies binary to system location
+  [4/5] SETUP        → Creates ~/.rusty/ data directory
+  [5/5] VERIFY       → Tests installation and creates shortcuts
+
+USAGE AFTER INSTALLATION:
+────────────────────────────────────────────────────────────────────────────────
+
+  rusty /path/to/project    Open a specific folder
+  rusty .                   Open current directory
+  rusty --help              Show help
+
+DATA DIRECTORY:
+────────────────────────────────────────────────────────────────────────────────
+
+  Windows:  %USERPROFILE%\.rusty\
+  Mac/Linux: ~/.rusty/
+
+  Structure:
+    ~/.rusty/
+    ├── agent/           AI agent communication
+    ├── workspaces/      Workspace data
+    └── permissions.json User permissions
+
+TROUBLESHOOTING:
+────────────────────────────────────────────────────────────────────────────────
+
+  Problem: "Command not found"
+  Solution: Restart terminal or reload shell config
+
+  Problem: "Permission denied" (Mac/Linux)
+  Solution: Run chmod +x on the installer first
+
+  Problem: "Administrator privileges required" (Windows)
+  Solution: Right-click and "Run as administrator"
+
+  Problem: Build fails
+  Solution: Ensure Rust is installed (https://rustup.rs/)
+
+NEED MORE HELP?
+────────────────────────────────────────────────────────────────────────────────
+
+  Read: README.md        - Detailed documentation
+  Read: FEATURES.md      - Complete feature list
+  Read: ../INSTALL.md    - Extended installation guide
+
+================================================================================

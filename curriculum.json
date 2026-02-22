@@ -1,0 +1,346 @@
+{
+  "name": "Rust Mastery Curriculum",
+  "version": "1.0.0",
+  "description": "A comprehensive curriculum for learning Rust through progressive broken code challenges",
+  "stages": [
+    {
+      "id": 1,
+      "name": "Foundation - Ownership & Memory",
+      "description": "Learn the core concepts of Rust's ownership system, move semantics, and memory management.",
+      "concepts": [
+        "ownership",
+        "move semantics",
+        "copy trait",
+        "stack vs heap",
+        "drop trait"
+      ],
+      "exercises": [
+        {
+          "id": "stage1_ex1",
+          "title": "Basic Ownership Transfer",
+          "difficulty": "Beginner",
+          "error_code": "E0382",
+          "estimated_time_minutes": 15
+        },
+        {
+          "id": "stage1_ex2",
+          "title": "Stack vs Heap - Copy Trait",
+          "difficulty": "Beginner",
+          "error_code": "E0382",
+          "estimated_time_minutes": 20
+        },
+        {
+          "id": "stage1_ex3",
+          "title": "Function Return Ownership",
+          "difficulty": "Beginner",
+          "error_code": "E0382",
+          "estimated_time_minutes": 20
+        },
+        {
+          "id": "stage1_ex4",
+          "title": "Vector Ownership in Loops",
+          "difficulty": "Intermediate",
+          "error_code": "E0382",
+          "estimated_time_minutes": 25
+        },
+        {
+          "id": "stage1_ex5",
+          "title": "Partial Moves in Structs",
+          "difficulty": "Intermediate",
+          "error_code": "E0382",
+          "estimated_time_minutes": 30
+        }
+      ],
+      "advancement_criteria": {
+        "min_exercises_completed": 4,
+        "min_success_rate": 0.8,
+        "required_concepts": ["ownership", "move semantics"],
+        "assessment": "Demonstrate understanding of how ownership works in Rust and when values are moved vs copied"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Borrowing & Lifetimes",
+      "description": "Master references, borrowing rules, and lifetime annotations.",
+      "concepts": [
+        "references",
+        "mutable borrowing",
+        "immutable borrowing",
+        "lifetime annotations",
+        "borrow checker"
+      ],
+      "exercises": [
+        {
+          "id": "stage2_ex1",
+          "title": "Multiple Mutable References",
+          "difficulty": "Beginner",
+          "error_code": "E0499",
+          "estimated_time_minutes": 20
+        },
+        {
+          "id": "stage2_ex2",
+          "title": "Mixing Mutable and Immutable References",
+          "difficulty": "Beginner",
+          "error_code": "E0502",
+          "estimated_time_minutes": 20
+        },
+        {
+          "id": "stage2_ex3",
+          "title": "Dangling References",
+          "difficulty": "Beginner",
+          "error_code": "E0106",
+          "estimated_time_minutes": 15
+        },
+        {
+          "id": "stage2_ex4",
+          "title": "Lifetime Annotations in Structs",
+          "difficulty": "Intermediate",
+          "error_code": "E0106",
+          "estimated_time_minutes": 30
+        },
+        {
+          "id": "stage2_ex5",
+          "title": "Multiple Lifetime Parameters",
+          "difficulty": "Intermediate",
+          "error_code": "E0106",
+          "estimated_time_minutes": 35
+        }
+      ],
+      "advancement_criteria": {
+        "min_exercises_completed": 4,
+        "min_success_rate": 0.8,
+        "required_concepts": ["references", "lifetime annotations"],
+        "assessment": "Understand borrowing rules and how to work with lifetimes in function signatures and structs"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Patterns & Abstractions",
+      "description": "Learn traits, generics, and common Rust patterns.",
+      "concepts": [
+        "traits",
+        "generics",
+        "iterators",
+        "closures",
+        "pattern matching"
+      ],
+      "exercises": [
+        {
+          "id": "stage3_ex1",
+          "title": "Implementing Basic Traits",
+          "difficulty": "Beginner",
+          "error_code": "E0277",
+          "estimated_time_minutes": 25
+        },
+        {
+          "id": "stage3_ex2",
+          "title": "Generic Functions with Trait Bounds",
+          "difficulty": "Intermediate",
+          "error_code": "E0369",
+          "estimated_time_minutes": 30
+        },
+        {
+          "id": "stage3_ex3",
+          "title": "Iterator Trait Implementation",
+          "difficulty": "Intermediate",
+          "error_code": "E0277",
+          "estimated_time_minutes": 35
+        },
+        {
+          "id": "stage3_ex4",
+          "title": "Closure Ownership Issues",
+          "difficulty": "Intermediate",
+          "error_code": "E0502",
+          "estimated_time_minutes": 25
+        },
+        {
+          "id": "stage3_ex5",
+          "title": "Advanced Iterator Chains",
+          "difficulty": "Intermediate",
+          "error_code": "E0282",
+          "estimated_time_minutes": 30
+        }
+      ],
+      "advancement_criteria": {
+        "min_exercises_completed": 4,
+        "min_success_rate": 0.75,
+        "required_concepts": ["traits", "generics"],
+        "assessment": "Demonstrate ability to implement traits and write generic code with appropriate bounds"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Advanced Memory Management",
+      "description": "Master smart pointers, interior mutability, and advanced patterns.",
+      "concepts": [
+        "Rc",
+        "Arc",
+        "RefCell",
+        "Box",
+        "reference cycles",
+        "Weak"
+      ],
+      "exercises": [
+        {
+          "id": "stage4_ex1",
+          "title": "Reference Counting with Rc",
+          "difficulty": "Advanced",
+          "error_code": "E0382",
+          "estimated_time_minutes": 35
+        },
+        {
+          "id": "stage4_ex2",
+          "title": "Interior Mutability with RefCell",
+          "difficulty": "Advanced",
+          "error_code": "E0596",
+          "estimated_time_minutes": 40
+        },
+        {
+          "id": "stage4_ex3",
+          "title": "Combining Rc and RefCell",
+          "difficulty": "Advanced",
+          "error_code": "E0594",
+          "estimated_time_minutes": 40
+        },
+        {
+          "id": "stage4_ex4",
+          "title": "Detecting Reference Cycles",
+          "difficulty": "Advanced",
+          "error_code": "LEAK",
+          "estimated_time_minutes": 45
+        },
+        {
+          "id": "stage4_ex5",
+          "title": "Custom Smart Pointer with Deref",
+          "difficulty": "Advanced",
+          "error_code": "E0308",
+          "estimated_time_minutes": 40
+        }
+      ],
+      "advancement_criteria": {
+        "min_exercises_completed": 4,
+        "min_success_rate": 0.75,
+        "required_concepts": ["Rc", "RefCell"],
+        "assessment": "Understand smart pointers, when to use each type, and how to handle complex ownership scenarios"
+      }
+    },
+    {
+      "id": 5,
+      "name": "Systems Programming",
+      "description": "Learn concurrent programming, unsafe code, and systems-level concepts.",
+      "concepts": [
+        "threads",
+        "Arc + Mutex",
+        "Send + Sync",
+        "unsafe code",
+        "channels",
+        "deadlock prevention"
+      ],
+      "exercises": [
+        {
+          "id": "stage5_ex1",
+          "title": "Basic Thread Safety",
+          "difficulty": "Advanced",
+          "error_code": "E0373",
+          "estimated_time_minutes": 40
+        },
+        {
+          "id": "stage5_ex2",
+          "title": "Multiple Thread Synchronization",
+          "difficulty": "Advanced",
+          "error_code": "E0382",
+          "estimated_time_minutes": 45
+        },
+        {
+          "id": "stage5_ex3",
+          "title": "Send and Sync Trait Bounds",
+          "difficulty": "Intermediate",
+          "error_code": "E0277",
+          "estimated_time_minutes": 30
+        },
+        {
+          "id": "stage5_ex4",
+          "title": "Deadlock Prevention",
+          "difficulty": "Expert",
+          "error_code": "DEADLOCK",
+          "estimated_time_minutes": 50
+        },
+        {
+          "id": "stage5_ex5",
+          "title": "Unsafe Code Contracts",
+          "difficulty": "Expert",
+          "error_code": "UNDEFINED",
+          "estimated_time_minutes": 45
+        }
+      ],
+      "advancement_criteria": {
+        "min_exercises_completed": 4,
+        "min_success_rate": 0.7,
+        "required_concepts": ["threads", "Arc + Mutex"],
+        "assessment": "Demonstrate ability to write safe concurrent code and understand when unsafe is necessary"
+      }
+    }
+  ],
+  "progression_rules": {
+    "description": "Rules for advancing through the curriculum",
+    "rules": [
+      "Complete minimum number of exercises in current stage before advancing",
+      "Must achieve minimum success rate for the stage",
+      "Must demonstrate understanding of all required concepts",
+      "Can revisit previous stages at any time for review",
+      "Advanced stages may reference concepts from earlier stages"
+    ]
+  },
+  "learning_objectives": {
+    "stage1": [
+      "Understand what ownership is and why Rust uses it",
+      "Know when values are moved vs copied",
+      "Understand stack vs heap allocation",
+      "Recognize when the Drop trait is called"
+    ],
+    "stage2": [
+      "Master the borrowing rules (one mutable OR multiple immutable)",
+      "Understand reference lifetimes",
+      "Write functions with explicit lifetime annotations",
+      "Avoid dangling references"
+    ],
+    "stage3": [
+      "Implement standard traits (Display, Debug, etc)",
+      "Write generic functions with trait bounds",
+      "Create and use iterators",
+      "Understand closure capture modes (Fn, FnMut, FnOnce)"
+    ],
+    "stage4": [
+      "Choose appropriate smart pointers for different scenarios",
+      "Understand interior mutability patterns",
+      "Detect and prevent reference cycles",
+      "Implement custom smart pointers"
+    ],
+    "stage5": [
+      "Write safe concurrent code using Arc and Mutex",
+      "Understand Send and Sync traits",
+      "Prevent deadlocks through lock ordering",
+      "Know when unsafe code is necessary and how to use it safely"
+    ]
+  },
+  "resources": {
+    "official_docs": "https://doc.rust-lang.org/book/",
+    "error_index": "https://doc.rust-lang.org/error-index.html",
+    "nomicon": "https://doc.rust-lang.org/nomicon/",
+    "reference": "https://doc.rust-lang.org/reference/"
+  },
+  "tips": {
+    "general": [
+      "Read compiler errors carefully - they are very helpful",
+      "Use cargo check frequently to catch errors early",
+      "Don't fight the borrow checker - understand why it's preventing your code",
+      "Start with the simplest solution and add complexity only when needed"
+    ],
+    "debugging": [
+      "Use println! debugging to understand ownership transfers",
+      "Draw diagrams of ownership and references",
+      "Use cargo clippy for additional hints",
+      "Read the full error message including the notes"
+    ]
+  }
+}

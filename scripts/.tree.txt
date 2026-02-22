@@ -1,0 +1,49 @@
+rust_agent/scripts/
+│
+├── INSTALLATION SCRIPTS (3 files, 24 KB)
+│   ├── install-rusty-windows.bat   (6.0 KB)  - Windows 10/11 installer
+│   ├── install-rusty-mac.sh        (8.3 KB)  - macOS 10.15+ installer [executable]
+│   └── install-rusty-linux.sh      (9.7 KB)  - Linux installer [executable]
+│
+├── DOCUMENTATION (6 files, 68 KB)
+│   ├── INDEX.md                    (6.7 KB)  - Navigation and quick reference
+│   ├── README.md                   (5.6 KB)  - Installation instructions
+│   ├── INSTALLATION_SUMMARY.md     (8.1 KB)  - Executive summary
+│   ├── FEATURES.md                 (6.5 KB)  - Feature comparison matrix
+│   ├── SHOWCASE.md                 (5.2 KB)  - Feature highlights
+│   └── TEST_GUIDE.md               (11 KB)   - Testing procedures
+│
+└── TOTAL: 9 files, 92 KB, 2,504 lines of code
+
+INSTALLATION LOCATIONS:
+├── Windows:  C:\Program Files\Rusty\rusty.exe
+├── macOS:    /usr/local/bin/rusty
+└── Linux:    ~/.local/bin/rusty
+
+DATA DIRECTORIES:
+├── Windows:  %USERPROFILE%\.rusty
+├── macOS:    ~/.rusty
+└── Linux:    ~/.rusty
+
+QUICK START:
+1. Choose your platform script
+2. Read README.md
+3. Run the installer
+4. Use 'rusty' command
+
+FEATURES:
+✓ Automatic cleanup of old agent installation
+✓ Release build compilation
+✓ PATH configuration
+✓ Data directory creation
+✓ Desktop shortcuts (optional)
+✓ Colored output and progress indicators
+✓ Comprehensive verification
+✓ Detailed success messages
+
+PLATFORMS SUPPORTED:
+✓ Windows 10/11
+✓ macOS 10.15+
+✓ Linux (all major distributions)
+
+STATUS: Ready for production use

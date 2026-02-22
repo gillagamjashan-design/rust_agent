@@ -1,0 +1,50 @@
+[package]
+name = "rusty-tui"
+version = "0.1.0"
+description = "A ratatui-based Rust IDE with AI agent integration"
+authors = ["Rusty IDE Team"]
+license = "MIT"
+repository = "https://github.com/yourusername/rusty-ide"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+
+# PTY terminal support
+portable-pty = "0.8"
+
+# File system watching
+notify = "6.1"
+
+# Directory helpers
+home = "0.5"
+dirs = "5.0"
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+
+# UUID generation
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Synchronization primitives
+parking_lot = "0.12"
+
+# DateTime handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# TUI dependencies
+ratatui = "0.26"
+crossterm = "0.27"
+tui-textarea = "0.4"
+syntect = "5.1"
+
+# Error handling
+thiserror = "1.0"
+
+# Rust Agent - Local library (same agent as `cargo run`)
+rust_agent = { path = "../../" }
+
+[target."cfg(windows)".dependencies]
+windows = { version = "0.52", features = ["Win32_Foundation", "Win32_System_Console"] }

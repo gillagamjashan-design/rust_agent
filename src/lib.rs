@@ -3,3 +3,9 @@
 
 pub mod config;
 pub mod web_search;
+pub mod exercises;
+pub mod exercise_integration;
+pub mod interactive_agent;
+pub mod claude_proxy;
+pub mod types;
+pub mod cache;

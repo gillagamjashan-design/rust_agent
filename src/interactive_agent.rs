@@ -251,7 +251,7 @@ impl InteractiveAgent {
         let full_prompt = self.build_context(question, kb_answer.as_ref(), web_results.as_ref());
 
         // Get response from Claude via proxy
-        match self.claude.send_request(full_prompt).await {
+        match self.claude.send_request(full_prompt, None).await {
             Ok(response) => {
                 println!("💡 Answer:\n");
                 println!("{}", response);

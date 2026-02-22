@@ -62,9 +62,10 @@ impl LearningAgent {
                     self.last_learned_id = question.id;
 
                     println!(
-                        "📚 Learned from Q&A #{}: {} (Total knowledge: {} items)",
+                        "📚 Learned Q&A #{}: {} | {} | Total: {} items",
                         question.id,
                         question.category,
+                        self.knowledge_base.get_learning_progress(),
                         self.knowledge_base.get_total_knowledge_count()
                     );
                 }

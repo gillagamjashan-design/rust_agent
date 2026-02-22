@@ -1,0 +1,348 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                   RUST TEACHING PROTOCOL - EXERCISE SYSTEM                ║
+║                              Architecture Diagram                          ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CURRICULUM STRUCTURE                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                              Rust Mastery Path
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         │                           │                           │
+         ▼                           ▼                           ▼
+    ┌────────┐                  ┌────────┐                  ┌────────┐
+    │ Stage 1│                  │ Stage 2│                  │ Stage 3│
+    │Foundation                 │Borrowing                  │Patterns│
+    │        │                  │        │                  │        │
+    │ 5 Ex   │                  │ 5 Ex   │                  │ 5 Ex   │
+    └────────┘                  └────────┘                  └────────┘
+         │                           │                           │
+         └───────────────────────────┼───────────────────────────┘
+                                     │
+                    ┌────────────────┴────────────────┐
+                    ▼                                 ▼
+               ┌────────┐                        ┌────────┐
+               │ Stage 4│                        │ Stage 5│
+               │Advanced│                        │Systems │
+               │        │                        │        │
+               │ 5 Ex   │                        │ 5 Ex   │
+               └────────┘                        └────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         STAGE PROGRESSION DETAIL                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║ STAGE 1: Foundation - Ownership & Memory                                 ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ Concepts: ownership, move semantics, copy trait, stack vs heap           ║
+║ Completion: 4/5 exercises + demonstrate ownership understanding          ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ ✓ Ex 1.1: Basic Ownership Transfer          [E0382] [Beginner]          ║
+║ ✓ Ex 1.2: Stack vs Heap - Copy Trait        [E0382] [Beginner]          ║
+║ ✓ Ex 1.3: Function Return Ownership         [E0382] [Beginner]          ║
+║ ✓ Ex 1.4: Vector Ownership in Loops         [E0382] [Intermediate]      ║
+║ ✓ Ex 1.5: Partial Moves in Structs          [E0382] [Intermediate]      ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+                                    ↓
+╔═══════════════════════════════════════════════════════════════════════════╗
+║ STAGE 2: Borrowing & Lifetimes                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ Concepts: references, borrowing, lifetimes, borrow checker               ║
+║ Completion: 4/5 exercises + demonstrate borrowing rules                  ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ ✓ Ex 2.1: Multiple Mutable References       [E0499] [Beginner]          ║
+║ ✓ Ex 2.2: Mixing Mut/Immut References       [E0502] [Beginner]          ║
+║ ✓ Ex 2.3: Dangling References               [E0106] [Beginner]          ║
+║ ✓ Ex 2.4: Lifetime in Structs               [E0106] [Intermediate]      ║
+║ ✓ Ex 2.5: Multiple Lifetime Params          [E0106] [Intermediate]      ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+                                    ↓
+╔═══════════════════════════════════════════════════════════════════════════╗
+║ STAGE 3: Patterns & Abstractions                                         ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ Concepts: traits, generics, iterators, closures, pattern matching        ║
+║ Completion: 4/5 exercises + demonstrate trait & generic usage            ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ ✓ Ex 3.1: Implementing Basic Traits         [E0277] [Beginner]          ║
+║ ✓ Ex 3.2: Generic with Trait Bounds         [E0369] [Intermediate]      ║
+║ ✓ Ex 3.3: Iterator Implementation           [E0277] [Intermediate]      ║
+║ ✓ Ex 3.4: Closure Ownership Issues          [E0502] [Intermediate]      ║
+║ ✓ Ex 3.5: Advanced Iterator Chains          [E0282] [Intermediate]      ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+                                    ↓
+╔═══════════════════════════════════════════════════════════════════════════╗
+║ STAGE 4: Advanced Memory Management                                      ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ Concepts: Rc, Arc, RefCell, Box, reference cycles, Weak                  ║
+║ Completion: 4/5 exercises + demonstrate smart pointer usage              ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ ✓ Ex 4.1: Reference Counting with Rc        [E0382] [Advanced]          ║
+║ ✓ Ex 4.2: Interior Mutability/RefCell       [E0596] [Advanced]          ║
+║ ✓ Ex 4.3: Combining Rc and RefCell          [E0594] [Advanced]          ║
+║ ✓ Ex 4.4: Detecting Reference Cycles        [LEAK]  [Advanced]          ║
+║ ✓ Ex 4.5: Custom Smart Pointer/Deref        [E0308] [Advanced]          ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+                                    ↓
+╔═══════════════════════════════════════════════════════════════════════════╗
+║ STAGE 5: Systems Programming                                             ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ Concepts: threads, Arc+Mutex, Send+Sync, unsafe, deadlock prevention     ║
+║ Completion: 4/5 exercises + demonstrate concurrent programming           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ ✓ Ex 5.1: Basic Thread Safety               [E0373] [Advanced]          ║
+║ ✓ Ex 5.2: Multi-Thread Synchronization      [E0382] [Advanced]          ║
+║ ✓ Ex 5.3: Send and Sync Trait Bounds        [E0277] [Intermediate]      ║
+║ ✓ Ex 5.4: Deadlock Prevention               [DEADLOCK] [Expert]         ║
+║ ✓ Ex 5.5: Unsafe Code Contracts             [UNDEFINED] [Expert]        ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            EXERCISE STRUCTURE                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                            ┌─────────────────┐
+                            │    Exercise     │
+                            └────────┬────────┘
+                                     │
+                    ┌────────────────┼────────────────┐
+                    │                │                │
+                    ▼                ▼                ▼
+            ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+            │ Broken Code  │ │    Hints     │ │   Solution   │
+            │              │ │              │ │              │
+            │ • Error Code │ │ • Progressive│ │ • Working    │
+            │ • Compiler   │ │ • 3-4 hints  │ │ • Explained  │
+            │   Message    │ │ • Build up   │ │ • Idiomatic  │
+            └──────────────┘ └──────────────┘ └──────────────┘
+                    │                │                │
+                    └────────────────┼────────────────┘
+                                     │
+                    ┌────────────────┼────────────────┐
+                    │                │                │
+                    ▼                ▼                ▼
+            ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+            │ Constraints  │ │   Concepts   │ │  Difficulty  │
+            │              │ │              │ │              │
+            │ • No .clone()│ │ • Ownership  │ │ • Beginner   │
+            │ • No unsafe  │ │ • Borrowing  │ │ • Intermediate
+            │ • Specific   │ │ • Traits     │ │ • Advanced   │
+            │   rules      │ │ • etc.       │ │ • Expert     │
+            └──────────────┘ └──────────────┘ └──────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          DATA FLOW ARCHITECTURE                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           User / Learning Agent                          │
+└─────────────────────────────┬────────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌──────────────────┐
+                    │ ExerciseManager  │◄────── progress.json
+                    └────────┬─────────┘
+                             │
+                ┌────────────┼────────────┐
+                │            │            │
+                ▼            ▼            ▼
+        ┌──────────┐  ┌──────────┐  ┌──────────┐
+        │Get Next  │  │ Record   │  │ Check    │
+        │Exercise  │  │ Attempt  │  │ Advance  │
+        └────┬─────┘  └────┬─────┘  └────┬─────┘
+             │             │              │
+             ▼             ▼              ▼
+    ┌────────────┐  ┌────────────┐  ┌────────────┐
+    │ Curriculum │  │  Progress  │  │   Stage    │
+    │   (25 Ex)  │  │  Tracking  │  │ Completion │
+    └────────────┘  └────────────┘  └────────────┘
+             │             │              │
+             └─────────────┼──────────────┘
+                           │
+                           ▼
+                 ┌──────────────────┐
+                 │ Knowledge Base   │
+                 │  (Integration)   │
+                 └──────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PROGRESS TRACKING FLOW                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    START
+      │
+      ▼
+┌──────────────┐
+│ Load Progress│──────► Read progress.json (if exists)
+└──────┬───────┘              │
+       │                      │ (or create new)
+       ▼                      │
+┌──────────────┐              │
+│Get Current   │◄─────────────┘
+│Stage         │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│Get Next      │──────► Filter uncompleted exercises
+│Exercise      │              │
+└──────┬───────┘              │
+       │                      ▼
+       │              ┌──────────────┐
+       │              │Present to    │
+       │              │User          │
+       │              └──────┬───────┘
+       │                     │
+       │                     ▼
+       │              ┌──────────────┐
+       │              │User Attempts │
+       │              │Solution      │
+       │              └──────┬───────┘
+       │                     │
+       ▼                     ▼
+┌──────────────┐      ┌──────────────┐
+│Record        │◄─────│Verify        │
+│Attempt       │      │Solution      │
+└──────┬───────┘      └──────────────┘
+       │
+       ▼
+┌──────────────┐
+│Update Stage  │
+│Progress      │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│Check         │──YES──► Advance Stage ──┐
+│Can Advance?  │                         │
+└──────┬───────┘                         │
+       │                                 │
+       NO                                │
+       │                                 │
+       └─────────────────────────────────┤
+                                         │
+                                         ▼
+                                  ┌──────────────┐
+                                  │Save Progress │
+                                  └──────┬───────┘
+                                         │
+                                         ▼
+                                    (repeat)
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ERROR CODE COVERAGE                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+E0382 ████████████████████████████ 7 exercises (28%)
+E0277 ████████████████ 4 exercises (16%)
+E0106 ████████████ 3 exercises (12%)
+E0502 ████████████ 3 exercises (12%)
+E0499 ████ 1 exercise (4%)
+E0596 ████ 1 exercise (4%)
+E0594 ████ 1 exercise (4%)
+E0369 ████ 1 exercise (4%)
+E0282 ████ 1 exercise (4%)
+E0308 ████ 1 exercise (4%)
+E0373 ████ 1 exercise (4%)
+LEAK  ████ 1 exercise (4%)
+DEADLOCK ████ 1 exercise (4%)
+UNDEFINED ████ 1 exercise (4%)
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DIFFICULTY DISTRIBUTION                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Beginner      ████████████ 8 exercises (32%)
+Intermediate  ████████████████ 10 exercises (40%)
+Advanced      ██████████ 6 exercises (24%)
+Expert        ████ 2 exercises (8%)
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            FILE ORGANIZATION                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+rust_agent/
+│
+├── src/
+│   ├── exercises.rs ················ 55 KB (1600+ lines) - Core exercises
+│   ├── exercise_integration.rs ····· 11 KB (400+ lines) - Progress tracking
+│   └── lib.rs ·················· Updated to export new modules
+│
+├── examples/
+│   ├── exercises_demo.rs ·········· 4 KB - Curriculum demonstration
+│   └── learning_with_exercises.rs · 3 KB - Integration example
+│
+├── tests/
+│   └── exercises_test.rs ·········· 6 KB - 25+ comprehensive tests
+│
+├── Documentation/
+│   ├── curriculum.json ············ 6 KB - Curriculum configuration
+│   ├── EXERCISES.md ··············· 12 KB - Main documentation
+│   ├── EXERCISE_REFERENCE.md ······ 8 KB - Quick reference
+│   ├── INTEGRATION_GUIDE.md ······· 10 KB - Integration instructions
+│   ├── EXERCISES_SUMMARY.md ······· 7 KB - Implementation summary
+│   └── EXERCISE_DIAGRAM.txt ······· This file - Visual overview
+│
+└── Cargo.toml ················· Updated with tempfile dependency
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          INTEGRATION POINTS                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────┐
+                    │   Orchestrator      │
+                    └──────────┬──────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+            ▼                  ▼                  ▼
+    ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+    │   Learning   │   │   Question   │   │    Answer    │
+    │    Agent     │   │    Agent     │   │    Agent     │
+    └──────┬───────┘   └──────┬───────┘   └──────┬───────┘
+           │                  │                  │
+           │                  │                  │
+           └──────────────────┼──────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────────┐
+                    │ Exercise Manager    │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │   Curriculum        │
+                    │   (25 Exercises)    │
+                    └─────────────────────┘
+
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                            QUICK STATS                                    ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ Total Exercises:          25                                             ║
+║ Total Stages:              5                                             ║
+║ Error Codes Covered:      14                                             ║
+║ Lines of Code:        ~2,500+                                            ║
+║ Documentation Lines:  ~2,000+                                            ║
+║ Test Cases:             25+                                              ║
+║ Estimated Study Time:   14 hours                                         ║
+║ Files Created:           12                                              ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+Legend:
+  ✓ = Implemented
+  ◄ = Input
+  ► = Output
+  │ = Connection
+  ┌─┐ = Component
+  ╔═╗ = Stage/Section
