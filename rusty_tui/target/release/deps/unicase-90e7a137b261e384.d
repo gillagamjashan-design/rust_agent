@@ -1,0 +1,10 @@
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/unicase-90e7a137b261e384.d: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/ascii.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/mod.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/map.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libunicase-90e7a137b261e384.rlib: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/ascii.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/mod.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/map.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libunicase-90e7a137b261e384.rmeta: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/ascii.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/mod.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/map.rs
+
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/lib.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/ascii.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/mod.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicase-2.9.0/src/unicode/map.rs:

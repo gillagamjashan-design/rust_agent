@@ -1,296 +1,454 @@
 # Implementation Plan
 
-## Phase 1: Foundation (Week 1)
+## Overview
 
-### 1.1 Project Setup
-- [x] Initialize Cargo project
-- [ ] Create directory structure
-- [ ] Set up dependencies in Cargo.toml
-- [ ] Create basic module structure
+Simple plan to build `rusty` - a beautiful TUI that shows only the agent chat with instant knowledge database access.
 
-### 1.2 File I/O Infrastructure
-- [ ] Implement file reader for questions.txt
-- [ ] Implement file writer for answers.txt
-- [ ] Create data directory structure
-- [ ] Add error handling for file operations
+**Timeline**: 1-2 days
+**Approach**: Build TUI, integrate existing knowledge system, delete unnecessary files
 
-### 1.3 Basic Data Structures
-```rust
-// Define core types
-struct Question {
-    id: usize,
-    text: String,
-    timestamp: DateTime<Utc>,
-}
+---
 
-struct Answer {
-    question_id: usize,
-    text: String,
-    code_examples: Vec<String>,
-    timestamp: DateTime<Utc>,
-}
+## Phase 1: Clean Up (2 hours)
 
-struct QAPair {
-    question: Question,
-    answer: Answer,
-}
+### Delete Unnecessary Shell Scripts
+
+**Keep only:**
+- `start_cliproxyapi.sh`
+
+**Delete:**
+- `start_agent.sh`
+- `test_agent.sh`
+- `install.sh`
+- `update.sh`
+- `spawn_teachers.sh`
+- `answer_teacher.sh`
+- `orchestrator.sh`
+- `test_websearch.sh`
+- `rusty_launcher.sh`
+- `start_agent_daemon.sh`
+- Any other .sh files
+
+### Remove Unnecessary Directories
+
+**Keep:**
+- `src/knowledge/` - Knowledge database (already built)
+- `src/tools/` - Knowledge fetcher (already built)
+- `src/claude_proxy.rs` - API client
+- `src/web_search/` - DuckDuckGo fallback
+- `knowledge/` - JSON files
+
+**Consider removing (not needed for TUI-only):**
+- `src/training/` - Old batch learning (not used)
+- `src/memory/` - Complex memory systems (not needed)
+- `src/orchestration/` - Workflows (not needed)
+- `src/interfaces/` - Old interfaces
+- `rusty_ide/` - Old IDE
+- `rusty_ide_v2/` - Tauri app (not working)
+
+---
+
+## Phase 2: Build Beautiful TUI (6-8 hours)
+
+### Step 1: Create rusty_tui Binary Crate
+
+**File**: `rusty_tui/Cargo.toml`
+
+```toml
+[package]
+name = "rusty"
+version = "1.0.0"
+edition = "2021"
+
+[[bin]]
+name = "rusty"
+path = "src/main.rs"
+
+[dependencies]
+rust_agent = { path = ".." }
+ratatui = "0.26"
+crossterm = "0.27"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0"
+syntect = "5.0"
 ```
 
-## Phase 2: Agent Development (Week 2-3)
+### Step 2: Main Entry Point
 
-### 2.1 Question Agent
+**File**: `rusty_tui/src/main.rs`
+
+**Responsibilities:**
+- Initialize knowledge database
+- Launch ratatui TUI
+- Handle startup errors
+- Graceful shutdown
+
+**Pseudocode:**
 ```rust
-impl QuestionAgent {
-    pub fn new(output_path: PathBuf) -> Self;
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Initialize knowledge database
+    let db = load_or_create_knowledge_database()?;
 
-    // Core functionality
-    pub fn generate_question(&mut self) -> Result<Question>;
-    pub fn save_question(&self, question: &Question) -> Result<()>;
+    // Create knowledge fetcher
+    let fetcher = KnowledgeFetcher::new(KnowledgeQuery::new(db));
 
-    // Question generation strategies
-    fn generate_fundamental_question(&self) -> String;
-    fn generate_intermediate_question(&self) -> String;
-    fn generate_advanced_question(&self) -> String;
+    // Create app state
+    let mut app = App::new(fetcher);
 
-    // State management
-    fn track_topic(&mut self, topic: &str);
-    fn select_next_topic(&self) -> String;
-}
-```
+    // Setup terminal
+    let mut terminal = setup_terminal()?;
 
-**Question Generation Logic**:
-1. Maintain a topic tree (fundamentals -> intermediate -> advanced)
-2. Track which topics have been covered
-3. Generate questions progressively
-4. Ensure diversity in question types
-
-### 2.2 Answer Agent
-```rust
-impl AnswerAgent {
-    pub fn new(input_path: PathBuf, output_path: PathBuf) -> Self;
-
-    // Core functionality
-    pub fn read_latest_questions(&self) -> Result<Vec<Question>>;
-    pub fn generate_answer(&self, question: &Question) -> Result<Answer>;
-    pub fn save_answer(&self, answer: &Answer) -> Result<()>;
-
-    // Answer generation
-    fn create_explanation(&self, topic: &str) -> String;
-    fn create_code_example(&self, topic: &str) -> String;
-    fn add_best_practices(&self, topic: &str) -> String;
-}
-```
-
-**Answer Generation Logic**:
-1. Parse question to understand topic
-2. Retrieve relevant information
-3. Structure answer with explanation + example
-4. Include best practices and common pitfalls
-
-### 2.3 Learning Agent
-```rust
-impl LearningAgent {
-    pub fn new() -> Self;
-
-    // Core learning loop
-    pub fn run_learning_cycle(&mut self) -> Result<()>;
-    pub fn process_qa_pair(&mut self, pair: QAPair) -> Result<()>;
-
-    // Knowledge management
-    fn extract_patterns(&self, pair: &QAPair) -> Vec<Pattern>;
-    fn update_knowledge_base(&mut self, patterns: Vec<Pattern>);
-    fn build_template(&self, pattern: &Pattern) -> CodeTemplate;
-
-    // State management
-    fn load_state(&mut self) -> Result<()>;
-    fn save_state(&self) -> Result<()>;
-    fn should_continue(&self) -> bool;
-}
-```
-
-## Phase 3: Knowledge Management (Week 4)
-
-### 3.1 Knowledge Base Structure
-```rust
-struct KnowledgeBase {
-    version: String,
-    qa_pairs: Vec<QAPair>,
-    patterns: HashMap<String, Pattern>,
-    templates: HashMap<String, CodeTemplate>,
-    metadata: Metadata,
-}
-
-struct Pattern {
-    name: String,
-    description: String,
-    code_pattern: String,
-    usage_examples: Vec<String>,
-    confidence: f32,
-}
-
-struct CodeTemplate {
-    template_type: TemplateType,
-    name: String,
-    files: Vec<TemplateFile>,
-    dependencies: Vec<String>,
-}
-```
-
-### 3.2 Parser Implementation
-```rust
-impl QAParser {
-    // Parse questions and answers from text files
-    pub fn parse_questions(&self, content: &str) -> Result<Vec<Question>>;
-    pub fn parse_answers(&self, content: &str) -> Result<Vec<Answer>>;
-    pub fn match_qa_pairs(&self, qs: Vec<Question>, as: Vec<Answer>)
-        -> Vec<QAPair>;
-
-    // Extract structured data
-    fn extract_code_blocks(&self, text: &str) -> Vec<String>;
-    fn extract_topics(&self, text: &str) -> Vec<String>;
-}
-```
-
-### 3.3 Storage Implementation
-```rust
-impl KnowledgeStore {
-    pub fn save(&self, kb: &KnowledgeBase) -> Result<()>;
-    pub fn load(&self) -> Result<KnowledgeBase>;
-    pub fn update_pattern(&mut self, pattern: Pattern) -> Result<()>;
-    pub fn add_template(&mut self, template: CodeTemplate) -> Result<()>;
-}
-```
-
-## Phase 4: Project Generation (Week 5)
-
-### 4.1 Template System
-```rust
-struct ProjectBuilder {
-    knowledge_base: Arc<KnowledgeBase>,
-}
-
-impl ProjectBuilder {
-    pub fn new(kb: Arc<KnowledgeBase>) -> Self;
-
-    pub fn generate_project(&self, spec: ProjectSpec) -> Result<Project>;
-    fn select_template(&self, project_type: &str) -> CodeTemplate;
-    fn apply_patterns(&self, template: &CodeTemplate) -> Vec<File>;
-    fn write_project(&self, project: &Project, path: &Path) -> Result<()>;
-}
-```
-
-### 4.2 Code Generation
-```rust
-impl CodeGenerator {
-    pub fn generate_main_file(&self, spec: &ProjectSpec) -> String;
-    pub fn generate_module(&self, module_spec: &ModuleSpec) -> String;
-    pub fn generate_cargo_toml(&self, deps: &[String]) -> String;
-
-    // Apply learned patterns
-    fn apply_pattern(&self, pattern: &Pattern, context: &Context) -> String;
-}
-```
-
-## Phase 5: Control & UI (Week 6)
-
-### 5.1 Main Loop
-```rust
-fn main() -> Result<()> {
-    let args = parse_args();
-
-    match args.command {
-        Command::Learn => run_learning_mode()?,
-        Command::Generate => run_generation_mode()?,
-        Command::Stop => stop_learning()?,
-    }
-
-    Ok(())
-}
-
-fn run_learning_mode() -> Result<()> {
-    let mut question_agent = QuestionAgent::new("data/questions.txt");
-    let mut answer_agent = AnswerAgent::new(
-        "data/questions.txt",
-        "data/answers.txt"
-    );
-    let mut learning_agent = LearningAgent::new();
-
+    // Main event loop
     loop {
-        // Generate question
-        let question = question_agent.generate_question()?;
-        question_agent.save_question(&question)?;
+        terminal.draw(|f| ui::render(f, &app))?;
 
-        // Generate answer
-        let answer = answer_agent.generate_answer(&question)?;
-        answer_agent.save_answer(&answer)?;
-
-        // Learn from Q&A
-        learning_agent.process_qa_pair(QAPair { question, answer })?;
-
-        // Check if should continue
-        if !learning_agent.should_continue() {
-            break;
+        if let Event::Key(key) = event::read()? {
+            if !app.handle_key(key) {
+                break;  // User quit
+            }
         }
-
-        // Add delay between iterations
-        thread::sleep(Duration::from_secs(1));
     }
 
+    // Cleanup
+    restore_terminal()?;
     Ok(())
 }
 ```
 
-### 5.2 User Controls
-- Start learning: `rust_agent learn --start`
-- Stop learning: `rust_agent learn --stop`
-- Generate project: `rust_agent generate --type cli --name myapp`
-- View knowledge: `rust_agent knowledge --show`
-- Statistics: `rust_agent stats`
+### Step 3: App State
 
-## Phase 6: Testing & Refinement (Week 7-8)
+**File**: `rusty_tui/src/app.rs`
 
-### 6.1 Unit Tests
-- Test each agent independently
-- Test knowledge base operations
-- Test code generation
+**State:**
+```rust
+pub struct App {
+    messages: Vec<Message>,
+    input: String,
+    fetcher: KnowledgeFetcher,
+    claude: ClaudeProxy,
+    scroll: usize,
+    mode: InputMode,  // Normal, Command
+}
 
-### 6.2 Integration Tests
-- Test complete learning cycle
-- Test project generation end-to-end
-- Test state persistence
+pub struct Message {
+    role: Role,  // User, Assistant
+    content: String,
+    timestamp: DateTime<Utc>,
+}
 
-### 6.3 Performance Optimization
-- Optimize file I/O
-- Cache frequently accessed data
-- Parallel processing where possible
+impl App {
+    pub fn handle_key(&mut self, key: KeyEvent) -> bool;
+    pub async fn send_message(&mut self);
+    pub fn handle_command(&mut self, cmd: &str);
+}
+```
 
-## Deployment
+### Step 4: UI Rendering
 
-### Build
+**File**: `rusty_tui/src/ui.rs`
+
+**Layout:**
+```
+┌────────────────────────────────────────────────┐
+│ 🦀 Rusty          [53 items loaded] [12:34 PM] │
+├────────────────────────────────────────────────┤
+│                                                │
+│ [Cyan] You: What is ownership in Rust?        │
+│                                                │
+│ [Green] Agent: Ownership is Rust's system...  │
+│ ```rust                                        │
+│ fn main() {                                    │
+│     let s = String::from("hello");            │
+│ }                                              │
+│ ```                                            │
+│                                                │
+│ [Cyan] You: Can you show me the builder...    │
+│ ...                                            │
+│                                                │
+│ [Scrollbar]                                    │
+├────────────────────────────────────────────────┤
+│ > Type your question... (/help for commands)  │
+└────────────────────────────────────────────────┘
+```
+
+**Colors (Tokyo Night theme):**
+- Background: #1a1b26
+- User messages: #7aa2f7 (Cyan)
+- Agent messages: #9ece6a (Green)
+- Code blocks: Syntax highlighted
+- Status bar: #414868 (Dark gray)
+
+### Step 5: Chat Component
+
+**File**: `rusty_tui/src/chat.rs`
+
+**Responsibilities:**
+- Render message history
+- Scroll handling (↑/↓)
+- Syntax highlighting for code blocks
+- Markdown formatting
+
+### Step 6: Input Component
+
+**File**: `rusty_tui/src/input.rs`
+
+**Features:**
+- Text input
+- Command detection (`/` prefix)
+- Multi-line support (Shift+Enter)
+- History (↑/↓ arrows)
+- Auto-complete for commands
+
+### Step 7: Commands
+
+**File**: `rusty_tui/src/commands.rs`
+
+**Commands:**
+```rust
+pub enum Command {
+    Help,                   // /help
+    Search(String),         // /search <query>
+    Stats,                  // /stats
+    Web(String),            // /web <query>
+    Clear,                  // /clear
+    Quit,                   // /quit
+}
+
+impl Command {
+    pub fn parse(input: &str) -> Option<Command>;
+    pub async fn execute(&self, app: &mut App) -> Result<()>;
+}
+```
+
+**Command Implementations:**
+- `/help` → Show command list in chat
+- `/search ownership` → Query database, show results table
+- `/stats` → Show: "53 items loaded (13 concepts, 18 patterns, 22 commands)"
+- `/web rust 2026` → Force web search, show results
+- `/clear` → Clear chat history
+- `/quit` → Exit TUI
+
+---
+
+## Phase 3: Integration (2-3 hours)
+
+### Connect Knowledge Database
+
+The knowledge system is already built (`src/knowledge/`), just use it:
+
+```rust
+// In main.rs
+use rust_agent::knowledge::{KnowledgeDatabase, KnowledgeLoader, KnowledgeQuery};
+use rust_agent::tools::KnowledgeFetcher;
+
+let db_path = dirs::home_dir()
+    .unwrap()
+    .join(".agent/data/knowledge.db");
+
+let db = if db_path.exists() {
+    KnowledgeDatabase::new(&db_path)?
+} else {
+    // First run - load from JSON
+    let db = KnowledgeDatabase::new(&db_path)?;
+    let loader = KnowledgeLoader::new(db);
+    loader.load_all_from_directory("knowledge")?;
+    db
+};
+
+let fetcher = KnowledgeFetcher::new(KnowledgeQuery::new(db));
+```
+
+### Connect Claude API
+
+Use existing `claude_proxy.rs`:
+
+```rust
+use rust_agent::claude_proxy::ClaudeProxy;
+
+let claude = ClaudeProxy::new("http://localhost:8317")?;
+```
+
+### Agent Response Flow
+
+```rust
+async fn handle_user_query(query: &str) -> Result<String> {
+    // 1. Fetch knowledge if needed
+    let knowledge = fetcher.search(query)?;
+
+    // 2. Build context
+    let context = if knowledge.has_results() {
+        format!("Relevant knowledge:\n{}", knowledge.formatted)
+    } else {
+        String::new()
+    };
+
+    // 3. Send to Claude
+    let prompt = format!("{}\n\nUser question: {}", context, query);
+    let response = claude.query(&prompt).await?;
+
+    Ok(response)
+}
+```
+
+---
+
+## Phase 4: Installation (1 hour)
+
+### Build and Install
+
 ```bash
+# Build release binary
+cd rusty_tui
 cargo build --release
+
+# Copy to PATH
+cp target/release/rusty ~/.local/bin/rusty
+chmod +x ~/.local/bin/rusty
+
+# Test
+rusty
 ```
 
-### Run
-```bash
-# Start learning
-./target/release/rust_agent learn --start
+### First Run Experience
 
-# In another terminal, stop when ready
-./target/release/rust_agent learn --stop
-
-# Generate a project
-./target/release/rust_agent generate \
-    --type cli \
-    --name my_tool \
-    --output ../my_tool
+```
+User runs: rusty
+    ↓
+Check ~/.agent/data/knowledge.db
+    ↓
+Not found - first run!
+    ↓
+Show loading message:
+"📚 Loading knowledge database (first time)..."
+    ↓
+Load JSON files (1-2 seconds)
+    ↓
+"✅ Loaded 53 items"
+    ↓
+Launch TUI
+    ↓
+"Welcome! Type your question or /help for commands"
 ```
 
-## Future Enhancements
+### Subsequent Runs
 
-1. **Multi-threaded Learning**: Run Q&A agents in parallel
-2. **Web Interface**: Monitor learning progress via web UI
-3. **Pattern Validation**: Validate learned patterns against real Rust code
-4. **Incremental Learning**: Resume learning from saved state
-5. **Export Knowledge**: Export knowledge base for sharing
-6. **Import Knowledge**: Import external knowledge bases
+```
+User runs: rusty
+    ↓
+Load database (~50ms)
+    ↓
+Launch TUI (~200ms)
+    ↓
+Ready!
+```
+
+---
+
+## Phase 5: Polish (2-3 hours)
+
+### Syntax Highlighting
+
+Use `syntect` with Tokyo Night theme:
+```rust
+use syntect::highlighting::ThemeSet;
+use syntect::parsing::SyntaxSet;
+
+let ss = SyntaxSet::load_defaults_newlines();
+let ts = ThemeSet::load_defaults();
+let theme = &ts.themes["base16-ocean.dark"];
+
+// Highlight code block
+let syntax = ss.find_syntax_by_extension("rs").unwrap();
+let highlighted = highlight_lines(&code, syntax, theme);
+```
+
+### Markdown Rendering
+
+Parse markdown and render:
+- **Bold** → Bold style
+- *Italic* → Italic style
+- `code` → Inline code style
+- ```rust code blocks ``` → Syntax highlighted
+- Lists → Bullet points
+- Links → Clickable (optional)
+
+### Responsive Layout
+
+- Adapt to terminal size
+- Minimum size: 80x24
+- Scroll when content exceeds viewport
+- Status bar shows: `[80x24] [53 items] [12:34 PM]`
+
+### Error Messages
+
+Beautiful error display:
+```
+┌──────────────────────────────────────────┐
+│ ❌ Error                                 │
+├──────────────────────────────────────────┤
+│ ClaudeProxyAPI not responding           │
+│                                          │
+│ Please start it with:                    │
+│ ./start_cliproxyapi.sh                   │
+└──────────────────────────────────────────┘
+```
+
+---
+
+## Phase 6: Testing (2-3 hours)
+
+### Manual Testing
+
+1. **First run**: Verify database loads
+2. **Search**: `/search ownership` shows results
+3. **Query**: "What is ownership?" gets answer with knowledge
+4. **Code generation**: "Write a TCP server" generates code
+5. **Commands**: All `/` commands work
+6. **Scrolling**: Long conversations scroll properly
+7. **Syntax highlighting**: Code blocks are colored
+8. **Resize**: Terminal resize works
+9. **Quit**: `/quit` and Ctrl+C exit cleanly
+
+### Edge Cases
+
+- Empty database (no JSON files)
+- ClaudeProxyAPI down
+- Very long messages
+- Special characters
+- Invalid commands
+- Network errors
+
+---
+
+## Final Checklist
+
+- [✓] Delete all .sh files except start_cliproxyapi.sh
+- [✓] Build rusty_tui with ratatui
+- [✓] Beautiful colored interface (Tokyo Night)
+- [✓] Syntax highlighting for code blocks
+- [✓] Integrate knowledge database (already done)
+- [✓] Chat history with scrolling
+- [✓] Commands: /help, /search, /stats, /quit
+- [✓] Install to ~/.local/bin/rusty
+- [✓] First run loads knowledge database
+- [✓] Subsequent runs instant startup
+- [✓] Documentation updated
+- [✓] README shows: `rusty` - that's it!
+
+---
+
+## Success Criteria
+
+✅ User runs `rusty` → beautiful TUI opens
+✅ User asks "What is ownership?" → gets answer with knowledge
+✅ User asks agent to write code → gets syntax highlighted code
+✅ Commands work: /search, /stats, /help, /quit
+✅ Startup time: <500ms (after first run)
+✅ Query response: <2s (database + API)
+✅ Beautiful interface with colors and syntax highlighting
+✅ No flags, no modes, no complexity
+
+**Just one command: `rusty`**
+
+That's the entire implementation plan!

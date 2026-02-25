@@ -1,0 +1,264 @@
+{
+  "title": "Rust Async/Await and Concurrency",
+  "version": "1.0.0",
+  "description": "Comprehensive guide to async programming and concurrency in Rust",
+  "sections": [
+    {
+      "name": "Async/Await Basics",
+      "description": "Understanding async Rust",
+      "concepts": [
+        {
+          "name": "async fn",
+          "description": "Asynchronous functions return Futures",
+          "key_points": [
+            "async fn returns impl Future<Output = T>",
+            "Futures are lazy - nothing happens until .await",
+            "await suspends execution until Future completes",
+            "Requires async runtime (tokio, async-std, etc.)"
+          ],
+          "examples": [
+            {
+              "title": "Basic async function",
+              "code": "async fn fetch_data() -> String {\n    // async work here\n    String::from(\"data\")\n}\n\n// Calling async function\nlet result = fetch_data().await;"
+            },
+            {
+              "title": "async block",
+              "code": "let future = async {\n    let x = fetch_x().await;\n    let y = fetch_y().await;\n    x + y\n};\n\nlet result = future.await;"
+            }
+          ]
+        },
+        {
+          "name": "Future Trait",
+          "description": "Core trait for async operations",
+          "definition": "pub trait Future {\n    type Output;\n    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output>;\n}",
+          "poll_states": [
+            "Poll::Pending - not ready yet",
+            "Poll::Ready(value) - computation complete"
+          ],
+          "key_points": [
+            "Futures are polled by executor",
+            "Executor schedules tasks and drives Futures to completion",
+            "Most users don't implement Future manually"
+          ]
+        },
+        {
+          "name": "async Runtime",
+          "description": "Executor that drives async code",
+          "runtimes": [
+            {
+              "name": "tokio",
+              "description": "Most popular async runtime",
+              "example": "#[tokio::main]\nasync fn main() {\n    // async code\n}"
+            },
+            {
+              "name": "async-std",
+              "description": "Async version of std library",
+              "example": "#[async_std::main]\nasync fn main() {\n    // async code\n}"
+            },
+            {
+              "name": "smol",
+              "description": "Small and fast runtime",
+              "example": "smol::block_on(async {\n    // async code\n});"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Concurrent Execution",
+      "description": "Running multiple async tasks",
+      "patterns": [
+        {
+          "name": "Sequential Execution",
+          "description": "Execute tasks one after another",
+          "example": "async fn sequential() {\n    let result1 = task1().await;\n    let result2 = task2().await;\n    let result3 = task3().await;\n}"
+        },
+        {
+          "name": "Concurrent Execution",
+          "description": "Execute tasks concurrently",
+          "tokio_example": "use tokio::join;\n\nasync fn concurrent() {\n    let (result1, result2, result3) = join!(\n        task1(),\n        task2(),\n        task3()\n    );\n}",
+          "futures_example": "use futures::future::join_all;\n\nasync fn concurrent() {\n    let tasks = vec![task1(), task2(), task3()];\n    let results = join_all(tasks).await;\n}"
+        },
+        {
+          "name": "Spawning Tasks",
+          "description": "Run tasks on separate async threads",
+          "example": "use tokio::task;\n\n#[tokio::main]\nasync fn main() {\n    let handle1 = task::spawn(async {\n        // work 1\n        42\n    });\n    \n    let handle2 = task::spawn(async {\n        // work 2\n        100\n    });\n    \n    let result1 = handle1.await.unwrap();\n    let result2 = handle2.await.unwrap();\n}"
+        },
+        {
+          "name": "Select Pattern",
+          "description": "Wait for first Future to complete",
+          "example": "use tokio::select;\n\nselect! {\n    result1 = async_op1() => {\n        println!(\"op1 completed first: {:?}\", result1);\n    }\n    result2 = async_op2() => {\n        println!(\"op2 completed first: {:?}\", result2);\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Thread-based Concurrency",
+      "description": "Multi-threading with std::thread",
+      "concepts": [
+        {
+          "name": "Spawning Threads",
+          "description": "Create new OS threads",
+          "examples": [
+            {
+              "title": "Basic thread spawn",
+              "code": "use std::thread;\n\nlet handle = thread::spawn(|| {\n    // work in thread\n    println!(\"Hello from thread!\");\n});\n\nhandle.join().unwrap();"
+            },
+            {
+              "title": "Moving data into thread",
+              "code": "let data = vec![1, 2, 3];\n\nlet handle = thread::spawn(move || {\n    println!(\"{:?}\", data);\n});\n\nhandle.join().unwrap();"
+            }
+          ]
+        },
+        {
+          "name": "Thread Safety Traits",
+          "description": "Send and Sync traits",
+          "traits": [
+            {
+              "name": "Send",
+              "description": "Type can be transferred across thread boundaries",
+              "examples": [
+                "Most types implement Send",
+                "Rc<T> does NOT implement Send",
+                "Arc<T> implements Send"
+              ]
+            },
+            {
+              "name": "Sync",
+              "description": "Type can be referenced from multiple threads",
+              "examples": [
+                "&T is Send if T is Sync",
+                "RefCell<T> is NOT Sync",
+                "Mutex<T> is Sync if T is Send"
+              ]
+            }
+          ],
+          "example": "fn must_be_send<T: Send>(t: T) {}\nfn must_be_sync<T: Sync>(t: T) {}\n\nlet arc = Arc::new(5);\nmust_be_send(arc.clone()); // OK\nmust_be_sync(arc); // OK"
+        }
+      ]
+    },
+    {
+      "name": "Synchronization Primitives",
+      "description": "Tools for safe concurrent access",
+      "primitives": [
+        {
+          "name": "Mutex<T>",
+          "description": "Mutual exclusion lock",
+          "std_example": "use std::sync::Mutex;\n\nlet counter = Mutex::new(0);\n\n{\n    let mut num = counter.lock().unwrap();\n    *num += 1;\n} // lock released here\n\nprintln!(\"{}\", counter.lock().unwrap());",
+          "tokio_example": "use tokio::sync::Mutex;\n\nlet counter = Mutex::new(0);\n\n{\n    let mut num = counter.lock().await;\n    *num += 1;\n}",
+          "notes": [
+            "std::sync::Mutex blocks thread",
+            "tokio::sync::Mutex is async-aware",
+            "Use Arc<Mutex<T>> to share across threads"
+          ]
+        },
+        {
+          "name": "RwLock<T>",
+          "description": "Reader-writer lock",
+          "example": "use std::sync::RwLock;\n\nlet lock = RwLock::new(5);\n\n// Multiple readers\nlet r1 = lock.read().unwrap();\nlet r2 = lock.read().unwrap();\nassert_eq!(*r1, 5);\n\n// One writer\nlet mut w = lock.write().unwrap();\n*w += 1;",
+          "use_cases": [
+            "Many readers, few writers",
+            "Read-heavy workloads"
+          ]
+        },
+        {
+          "name": "Arc<T>",
+          "description": "Atomic reference counting (thread-safe Rc)",
+          "example": "use std::sync::Arc;\nuse std::thread;\n\nlet data = Arc::new(vec![1, 2, 3]);\n\nlet data_clone = Arc::clone(&data);\nlet handle = thread::spawn(move || {\n    println!(\"{:?}\", data_clone);\n});\n\nhandle.join().unwrap();",
+          "common_pattern": "Arc<Mutex<T>> - shared mutable state"
+        },
+        {
+          "name": "Channels",
+          "description": "Message passing between threads",
+          "std_mpsc": {
+            "description": "Multi-producer, single-consumer",
+            "example": "use std::sync::mpsc;\nuse std::thread;\n\nlet (tx, rx) = mpsc::channel();\n\nthread::spawn(move || {\n    tx.send(\"Hello\").unwrap();\n});\n\nlet received = rx.recv().unwrap();\nprintln!(\"{}\", received);"
+          },
+          "tokio_mpsc": {
+            "description": "Async multi-producer, single-consumer",
+            "example": "use tokio::sync::mpsc;\n\nlet (tx, mut rx) = mpsc::channel(100);\n\ntokio::spawn(async move {\n    tx.send(\"Hello\").await.unwrap();\n});\n\nif let Some(msg) = rx.recv().await {\n    println!(\"{}\", msg);\n}"
+          },
+          "tokio_broadcast": {
+            "description": "Multi-producer, multi-consumer",
+            "example": "use tokio::sync::broadcast;\n\nlet (tx, mut rx1) = broadcast::channel(16);\nlet mut rx2 = tx.subscribe();\n\ntx.send(\"message\").unwrap();\n\nlet msg1 = rx1.recv().await.unwrap();\nlet msg2 = rx2.recv().await.unwrap();"
+          }
+        },
+        {
+          "name": "Atomic Types",
+          "description": "Lock-free atomic operations",
+          "types": [
+            "AtomicBool",
+            "AtomicI32, AtomicI64",
+            "AtomicU32, AtomicU64",
+            "AtomicUsize"
+          ],
+          "example": "use std::sync::atomic::{AtomicUsize, Ordering};\n\nlet counter = AtomicUsize::new(0);\n\ncounter.fetch_add(1, Ordering::SeqCst);\nlet value = counter.load(Ordering::SeqCst);",
+          "ordering": [
+            "Relaxed - no ordering guarantees",
+            "Release - synchronizes with Acquire",
+            "Acquire - synchronizes with Release",
+            "AcqRel - both Acquire and Release",
+            "SeqCst - sequential consistency (strongest)"
+          ]
+        },
+        {
+          "name": "Barrier",
+          "description": "Synchronization point for threads",
+          "example": "use std::sync::{Arc, Barrier};\nuse std::thread;\n\nlet barrier = Arc::new(Barrier::new(3));\n\nfor _ in 0..3 {\n    let b = Arc::clone(&barrier);\n    thread::spawn(move || {\n        println!(\"Before barrier\");\n        b.wait();\n        println!(\"After barrier\");\n    });\n}"
+        },
+        {
+          "name": "Condvar",
+          "description": "Condition variable for waiting",
+          "example": "use std::sync::{Arc, Mutex, Condvar};\n\nlet pair = Arc::new((Mutex::new(false), Condvar::new()));\nlet (lock, cvar) = &*pair;\n\nlet mut started = lock.lock().unwrap();\nwhile !*started {\n    started = cvar.wait(started).unwrap();\n}\n\n// Signal from another thread\n*lock.lock().unwrap() = true;\ncvar.notify_one();"
+        }
+      ]
+    },
+    {
+      "name": "Common Patterns",
+      "description": "Idiomatic concurrent patterns",
+      "patterns": [
+        {
+          "name": "Shared State with Arc<Mutex>",
+          "example": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nlet counter = Arc::new(Mutex::new(0));\nlet mut handles = vec![];\n\nfor _ in 0..10 {\n    let counter = Arc::clone(&counter);\n    let handle = thread::spawn(move || {\n        let mut num = counter.lock().unwrap();\n        *num += 1;\n    });\n    handles.push(handle);\n}\n\nfor handle in handles {\n    handle.join().unwrap();\n}\n\nprintln!(\"Result: {}\", *counter.lock().unwrap());"
+        },
+        {
+          "name": "Worker Pool",
+          "example": "use std::sync::mpsc;\nuse std::thread;\n\nlet (tx, rx) = mpsc::channel();\nlet rx = Arc::new(Mutex::new(rx));\n\nfor _ in 0..4 {\n    let rx = Arc::clone(&rx);\n    thread::spawn(move || {\n        loop {\n            let job = rx.lock().unwrap().recv();\n            match job {\n                Ok(job) => process(job),\n                Err(_) => break,\n            }\n        }\n    });\n}\n\nfor job in jobs {\n    tx.send(job).unwrap();\n}"
+        },
+        {
+          "name": "Async Task Pool",
+          "example": "use tokio::task;\n\nlet handles: Vec<_> = (0..10)\n    .map(|i| {\n        task::spawn(async move {\n            process(i).await\n        })\n    })\n    .collect();\n\nfor handle in handles {\n    handle.await.unwrap();\n}"
+        },
+        {
+          "name": "Timeout Pattern",
+          "example": "use tokio::time::{timeout, Duration};\n\nmatch timeout(Duration::from_secs(5), long_operation()).await {\n    Ok(result) => println!(\"Completed: {:?}\", result),\n    Err(_) => println!(\"Timeout!\"),\n}"
+        }
+      ]
+    },
+    {
+      "name": "Avoiding Deadlocks",
+      "description": "Best practices for safe concurrency",
+      "strategies": [
+        {
+          "strategy": "Lock Ordering",
+          "description": "Always acquire locks in the same order",
+          "example": "// Always lock A before B\nlet a_guard = lock_a.lock().unwrap();\nlet b_guard = lock_b.lock().unwrap();"
+        },
+        {
+          "strategy": "Use try_lock",
+          "description": "Non-blocking lock acquisition",
+          "example": "if let Ok(guard) = mutex.try_lock() {\n    // got lock\n} else {\n    // couldn't get lock, do something else\n}"
+        },
+        {
+          "strategy": "Minimize Lock Scope",
+          "description": "Hold locks for shortest time possible",
+          "example": "{\n    let mut data = mutex.lock().unwrap();\n    data.modify();\n} // lock released\n// do other work without lock"
+        },
+        {
+          "strategy": "Use Message Passing",
+          "description": "Prefer channels over shared state",
+          "example": "// Instead of Arc<Mutex<T>>, use channels\nlet (tx, rx) = mpsc::channel();\ntx.send(data).unwrap();"
+        }
+      ]
+    }
+  ]
+}

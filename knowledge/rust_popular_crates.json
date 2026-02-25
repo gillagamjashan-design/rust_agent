@@ -1,0 +1,255 @@
+{
+  "title": "Popular Rust Crates - Essential Libraries",
+  "version": "1.0.0",
+  "description": "Commonly used crates in Rust ecosystem",
+  "crates": [
+    {
+      "name": "tokio",
+      "category": "async_runtime",
+      "description": "Asynchronous runtime for Rust",
+      "cargo_toml": "tokio = { version = \"1\", features = [\"full\"] }",
+      "key_features": [
+        "async/await runtime",
+        "Multi-threaded task scheduler",
+        "Async I/O (TCP, UDP, files)",
+        "Timers and intervals",
+        "Synchronization primitives (Mutex, RwLock, Semaphore)"
+      ],
+      "common_patterns": [
+        {
+          "name": "Basic async function",
+          "code": "#[tokio::main]\nasync fn main() {\n    println!(\"Hello from tokio!\");\n}"
+        },
+        {
+          "name": "Spawning tasks",
+          "code": "use tokio::task;\n\n#[tokio::main]\nasync fn main() {\n    let handle = task::spawn(async {\n        // async work\n        42\n    });\n    \n    let result = handle.await.unwrap();\n}"
+        },
+        {
+          "name": "Async sleep",
+          "code": "use tokio::time::{sleep, Duration};\n\nasync fn wait() {\n    sleep(Duration::from_secs(1)).await;\n}"
+        },
+        {
+          "name": "Select macro",
+          "code": "use tokio::select;\n\nselect! {\n    result1 = async_op1() => {\n        // handle result1\n    }\n    result2 = async_op2() => {\n        // handle result2\n    }\n}"
+        }
+      ],
+      "modules": [
+        {
+          "name": "tokio::net",
+          "description": "Async networking",
+          "types": ["TcpListener", "TcpStream", "UdpSocket"]
+        },
+        {
+          "name": "tokio::fs",
+          "description": "Async file operations",
+          "types": ["File", "read", "write"]
+        },
+        {
+          "name": "tokio::sync",
+          "description": "Async synchronization",
+          "types": ["Mutex", "RwLock", "Semaphore", "Notify", "mpsc"]
+        },
+        {
+          "name": "tokio::time",
+          "description": "Time utilities",
+          "types": ["sleep", "interval", "timeout"]
+        }
+      ]
+    },
+    {
+      "name": "serde",
+      "category": "serialization",
+      "description": "Serialization and deserialization framework",
+      "cargo_toml": "serde = { version = \"1.0\", features = [\"derive\"] }\nserde_json = \"1.0\"",
+      "key_features": [
+        "Serialize/deserialize data structures",
+        "Support for JSON, TOML, YAML, MessagePack, etc.",
+        "Derive macros for automatic implementation",
+        "Custom serialization logic"
+      ],
+      "common_patterns": [
+        {
+          "name": "Derive Serialize and Deserialize",
+          "code": "use serde::{Serialize, Deserialize};\n\n#[derive(Serialize, Deserialize, Debug)]\nstruct User {\n    id: u32,\n    name: String,\n    email: String,\n}"
+        },
+        {
+          "name": "JSON serialization",
+          "code": "use serde_json;\n\nlet user = User {\n    id: 1,\n    name: \"Alice\".to_string(),\n    email: \"alice@example.com\".to_string(),\n};\n\nlet json = serde_json::to_string(&user)?;\nprintln!(\"{}\", json);"
+        },
+        {
+          "name": "JSON deserialization",
+          "code": "let json = r#\"\n{\n    \"id\": 1,\n    \"name\": \"Alice\",\n    \"email\": \"alice@example.com\"\n}\n\"#;\n\nlet user: User = serde_json::from_str(json)?;"
+        },
+        {
+          "name": "Rename fields",
+          "code": "#[derive(Serialize, Deserialize)]\nstruct User {\n    #[serde(rename = \"user_id\")]\n    id: u32,\n    name: String,\n}"
+        },
+        {
+          "name": "Skip fields",
+          "code": "#[derive(Serialize, Deserialize)]\nstruct User {\n    id: u32,\n    name: String,\n    #[serde(skip)]\n    password: String,\n}"
+        }
+      ]
+    },
+    {
+      "name": "anyhow",
+      "category": "error_handling",
+      "description": "Flexible error handling with context",
+      "cargo_toml": "anyhow = \"1.0\"",
+      "key_features": [
+        "anyhow::Result<T> type alias",
+        "anyhow::Error for any error type",
+        "Context trait for adding error context",
+        "Automatic error conversion"
+      ],
+      "common_patterns": [
+        {
+          "name": "Basic usage",
+          "code": "use anyhow::Result;\n\nfn do_something() -> Result<()> {\n    let file = std::fs::read_to_string(\"file.txt\")?;\n    Ok(())\n}"
+        },
+        {
+          "name": "Adding context",
+          "code": "use anyhow::{Context, Result};\n\nfn read_config() -> Result<String> {\n    std::fs::read_to_string(\"config.toml\")\n        .context(\"Failed to read config file\")?;\n    Ok(config)\n}"
+        },
+        {
+          "name": "Custom errors",
+          "code": "use anyhow::{anyhow, Result};\n\nfn validate(x: i32) -> Result<i32> {\n    if x < 0 {\n        return Err(anyhow!(\"value must be positive\"));\n    }\n    Ok(x)\n}"
+        },
+        {
+          "name": "Error chaining",
+          "code": "use anyhow::{Context, Result};\n\nfn process() -> Result<()> {\n    let data = read_file()\n        .context(\"Reading file\")?;\n    \n    parse_data(&data)\n        .context(\"Parsing data\")?;\n    \n    Ok(())\n}"
+        }
+      ]
+    },
+    {
+      "name": "reqwest",
+      "category": "http_client",
+      "description": "HTTP client with async support",
+      "cargo_toml": "reqwest = { version = \"0.12\", features = [\"json\"] }",
+      "key_features": [
+        "Async HTTP requests",
+        "JSON body support",
+        "Cookie support",
+        "Automatic decompression",
+        "Proxy support"
+      ],
+      "common_patterns": [
+        {
+          "name": "GET request",
+          "code": "use reqwest;\n\n#[tokio::main]\nasync fn main() -> Result<(), reqwest::Error> {\n    let response = reqwest::get(\"https://api.example.com/data\")\n        .await?\n        .text()\n        .await?;\n    \n    println!(\"{}\", response);\n    Ok(())\n}"
+        },
+        {
+          "name": "JSON response",
+          "code": "use serde::Deserialize;\n\n#[derive(Deserialize)]\nstruct ApiResponse {\n    status: String,\n    data: Vec<String>,\n}\n\nlet response = reqwest::get(\"https://api.example.com/data\")\n    .await?\n    .json::<ApiResponse>()\n    .await?;"
+        },
+        {
+          "name": "POST with JSON",
+          "code": "use serde::Serialize;\n\n#[derive(Serialize)]\nstruct Request {\n    name: String,\n    value: i32,\n}\n\nlet client = reqwest::Client::new();\nlet response = client\n    .post(\"https://api.example.com/create\")\n    .json(&Request { name: \"test\".into(), value: 42 })\n    .send()\n    .await?;"
+        },
+        {
+          "name": "Headers and authentication",
+          "code": "let client = reqwest::Client::new();\nlet response = client\n    .get(\"https://api.example.com/data\")\n    .header(\"Authorization\", \"Bearer token123\")\n    .header(\"User-Agent\", \"my-app/1.0\")\n    .send()\n    .await?;"
+        }
+      ]
+    },
+    {
+      "name": "clap",
+      "category": "cli",
+      "description": "Command line argument parser",
+      "cargo_toml": "clap = { version = \"4\", features = [\"derive\"] }",
+      "key_features": [
+        "Derive macros for CLI definition",
+        "Subcommands support",
+        "Auto-generated help messages",
+        "Environment variable integration"
+      ],
+      "common_patterns": [
+        {
+          "name": "Basic CLI",
+          "code": "use clap::Parser;\n\n#[derive(Parser)]\n#[command(name = \"myapp\")]\n#[command(about = \"A simple CLI app\", long_about = None)]\nstruct Cli {\n    #[arg(short, long)]\n    name: String,\n    \n    #[arg(short, long, default_value_t = 1)]\n    count: u8,\n}\n\nfn main() {\n    let cli = Cli::parse();\n    println!(\"Name: {}, Count: {}\", cli.name, cli.count);\n}"
+        },
+        {
+          "name": "Subcommands",
+          "code": "use clap::{Parser, Subcommand};\n\n#[derive(Parser)]\nstruct Cli {\n    #[command(subcommand)]\n    command: Commands,\n}\n\n#[derive(Subcommand)]\nenum Commands {\n    Add { name: String },\n    Remove { id: u32 },\n}\n\nfn main() {\n    let cli = Cli::parse();\n    match cli.command {\n        Commands::Add { name } => println!(\"Adding {}\", name),\n        Commands::Remove { id } => println!(\"Removing {}\", id),\n    }\n}"
+        },
+        {
+          "name": "Optional arguments",
+          "code": "#[derive(Parser)]\nstruct Cli {\n    #[arg(short, long)]\n    config: Option<String>,\n    \n    #[arg(short, long, action)]\n    verbose: bool,\n}"
+        }
+      ]
+    },
+    {
+      "name": "thiserror",
+      "category": "error_handling",
+      "description": "Derive macro for error types",
+      "cargo_toml": "thiserror = \"1.0\"",
+      "key_features": [
+        "Derive Error trait implementation",
+        "Custom error messages",
+        "Source error chaining",
+        "Automatic Display implementation"
+      ],
+      "common_patterns": [
+        {
+          "name": "Define custom errors",
+          "code": "use thiserror::Error;\n\n#[derive(Error, Debug)]\npub enum MyError {\n    #[error(\"IO error: {0}\")]\n    Io(#[from] std::io::Error),\n    \n    #[error(\"Parse error: {0}\")]\n    Parse(String),\n    \n    #[error(\"Invalid value: {value}, expected {expected}\")]\n    Invalid {\n        value: i32,\n        expected: i32,\n    },\n}"
+        },
+        {
+          "name": "Using custom errors",
+          "code": "fn process_file(path: &str) -> Result<(), MyError> {\n    let contents = std::fs::read_to_string(path)?; // auto-converts io::Error\n    \n    if contents.is_empty() {\n        return Err(MyError::Parse(\"Empty file\".into()));\n    }\n    \n    Ok(())\n}"
+        }
+      ]
+    },
+    {
+      "name": "rayon",
+      "category": "parallelism",
+      "description": "Data parallelism library",
+      "cargo_toml": "rayon = \"1.7\"",
+      "key_features": [
+        "Parallel iterators",
+        "Work-stealing thread pool",
+        "Zero overhead parallelism",
+        "Automatic load balancing"
+      ],
+      "common_patterns": [
+        {
+          "name": "Parallel iteration",
+          "code": "use rayon::prelude::*;\n\nlet v: Vec<i32> = (0..1000).collect();\nlet sum: i32 = v.par_iter()\n    .map(|x| x * 2)\n    .sum();"
+        },
+        {
+          "name": "Parallel sorting",
+          "code": "use rayon::prelude::*;\n\nlet mut v = vec![5, 3, 8, 1, 9];\nv.par_sort();"
+        },
+        {
+          "name": "Parallel map",
+          "code": "use rayon::prelude::*;\n\nlet v: Vec<_> = (0..100)\n    .into_par_iter()\n    .map(|x| expensive_computation(x))\n    .collect();"
+        }
+      ]
+    },
+    {
+      "name": "regex",
+      "category": "text_processing",
+      "description": "Regular expressions",
+      "cargo_toml": "regex = \"1\"",
+      "key_features": [
+        "Fast regex matching",
+        "Unicode support",
+        "Capture groups",
+        "Lazy compilation"
+      ],
+      "common_patterns": [
+        {
+          "name": "Basic matching",
+          "code": "use regex::Regex;\n\nlet re = Regex::new(r\"\\d{4}-\\d{2}-\\d{2}\").unwrap();\nlet text = \"Date: 2024-03-15\";\nif re.is_match(text) {\n    println!(\"Found a date!\");\n}"
+        },
+        {
+          "name": "Capture groups",
+          "code": "use regex::Regex;\n\nlet re = Regex::new(r\"(\\d{4})-(\\d{2})-(\\d{2})\").unwrap();\nlet text = \"Date: 2024-03-15\";\n\nif let Some(caps) = re.captures(text) {\n    println!(\"Year: {}\", &caps[1]);\n    println!(\"Month: {}\", &caps[2]);\n    println!(\"Day: {}\", &caps[3]);\n}"
+        },
+        {
+          "name": "Find all matches",
+          "code": "let re = Regex::new(r\"\\b\\w{4}\\b\").unwrap();\nlet text = \"This is a test with four letter words\";\n\nfor mat in re.find_iter(text) {\n    println!(\"{}\", mat.as_str());\n}"
+        }
+      ]
+    }
+  ]
+}

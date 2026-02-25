@@ -1,0 +1,394 @@
+{
+  "title": "Rust Toolchain and Cargo Commands",
+  "version": "1.0.0",
+  "description": "Essential commands for Rust development",
+  "sections": [
+    {
+      "name": "Cargo Commands",
+      "description": "Package manager and build system",
+      "commands": [
+        {
+          "command": "cargo new <name>",
+          "description": "Create a new Rust project",
+          "options": [
+            "--bin - create binary project (default)",
+            "--lib - create library project"
+          ],
+          "examples": [
+            "cargo new my_project",
+            "cargo new my_lib --lib"
+          ]
+        },
+        {
+          "command": "cargo build",
+          "description": "Compile the project",
+          "options": [
+            "--release - build with optimizations",
+            "--target <triple> - build for specific target",
+            "--features <features> - enable specific features",
+            "--all-features - enable all features",
+            "--no-default-features - disable default features"
+          ],
+          "examples": [
+            "cargo build",
+            "cargo build --release",
+            "cargo build --features \"feature1 feature2\""
+          ],
+          "output": "Compiled binary in target/debug/ or target/release/"
+        },
+        {
+          "command": "cargo run",
+          "description": "Build and run the project",
+          "options": [
+            "--release - run release build",
+            "-- <args> - pass arguments to the program"
+          ],
+          "examples": [
+            "cargo run",
+            "cargo run --release",
+            "cargo run -- arg1 arg2"
+          ]
+        },
+        {
+          "command": "cargo test",
+          "description": "Run tests",
+          "options": [
+            "--release - run in release mode",
+            "--lib - run library tests only",
+            "--bins - run binary tests only",
+            "--doc - run documentation tests",
+            "-- --nocapture - show println! output",
+            "-- --test-threads=1 - run tests sequentially"
+          ],
+          "examples": [
+            "cargo test",
+            "cargo test test_name",
+            "cargo test -- --nocapture",
+            "cargo test --lib"
+          ]
+        },
+        {
+          "command": "cargo check",
+          "description": "Check code without building",
+          "benefits": [
+            "Faster than cargo build",
+            "Catches compilation errors",
+            "Good for development workflow"
+          ],
+          "examples": [
+            "cargo check",
+            "cargo check --all-targets"
+          ]
+        },
+        {
+          "command": "cargo clippy",
+          "description": "Lint code with Clippy",
+          "options": [
+            "-- -D warnings - treat warnings as errors",
+            "-- -W clippy::pedantic - enable pedantic lints"
+          ],
+          "examples": [
+            "cargo clippy",
+            "cargo clippy -- -D warnings",
+            "cargo clippy --fix - automatically fix issues"
+          ]
+        },
+        {
+          "command": "cargo fmt",
+          "description": "Format code",
+          "options": [
+            "-- --check - check formatting without modifying files"
+          ],
+          "examples": [
+            "cargo fmt",
+            "cargo fmt -- --check"
+          ]
+        },
+        {
+          "command": "cargo doc",
+          "description": "Build documentation",
+          "options": [
+            "--open - open docs in browser",
+            "--no-deps - don't document dependencies"
+          ],
+          "examples": [
+            "cargo doc --open",
+            "cargo doc --no-deps"
+          ]
+        },
+        {
+          "command": "cargo clean",
+          "description": "Remove target directory",
+          "examples": [
+            "cargo clean"
+          ]
+        },
+        {
+          "command": "cargo update",
+          "description": "Update dependencies",
+          "examples": [
+            "cargo update",
+            "cargo update <package>"
+          ]
+        },
+        {
+          "command": "cargo tree",
+          "description": "Display dependency tree",
+          "options": [
+            "-i <package> - show reverse dependencies",
+            "-d - show duplicate dependencies"
+          ],
+          "examples": [
+            "cargo tree",
+            "cargo tree -i serde"
+          ]
+        },
+        {
+          "command": "cargo search",
+          "description": "Search crates.io",
+          "examples": [
+            "cargo search regex"
+          ]
+        },
+        {
+          "command": "cargo publish",
+          "description": "Publish crate to crates.io",
+          "options": [
+            "--dry-run - verify without publishing"
+          ],
+          "examples": [
+            "cargo publish --dry-run",
+            "cargo publish"
+          ]
+        },
+        {
+          "command": "cargo install",
+          "description": "Install binary crate",
+          "examples": [
+            "cargo install ripgrep",
+            "cargo install --path ."
+          ]
+        },
+        {
+          "command": "cargo add",
+          "description": "Add dependency to Cargo.toml",
+          "examples": [
+            "cargo add serde",
+            "cargo add tokio --features full",
+            "cargo add serde_json --dev"
+          ]
+        },
+        {
+          "command": "cargo remove",
+          "description": "Remove dependency from Cargo.toml",
+          "examples": [
+            "cargo remove serde"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Rustup Commands",
+      "description": "Rust toolchain installer",
+      "commands": [
+        {
+          "command": "rustup update",
+          "description": "Update Rust toolchain",
+          "examples": [
+            "rustup update",
+            "rustup update stable"
+          ]
+        },
+        {
+          "command": "rustup default",
+          "description": "Set default toolchain",
+          "examples": [
+            "rustup default stable",
+            "rustup default nightly"
+          ]
+        },
+        {
+          "command": "rustup toolchain",
+          "description": "Manage toolchains",
+          "subcommands": [
+            "list - list installed toolchains",
+            "install <toolchain> - install toolchain",
+            "uninstall <toolchain> - remove toolchain"
+          ],
+          "examples": [
+            "rustup toolchain list",
+            "rustup toolchain install nightly",
+            "rustup toolchain uninstall 1.70.0"
+          ]
+        },
+        {
+          "command": "rustup component",
+          "description": "Manage components",
+          "components": [
+            "rustfmt - code formatter",
+            "clippy - linter",
+            "rust-src - Rust source code",
+            "rust-analyzer - LSP server"
+          ],
+          "examples": [
+            "rustup component add rustfmt",
+            "rustup component add clippy",
+            "rustup component add rust-src"
+          ]
+        },
+        {
+          "command": "rustup target",
+          "description": "Manage compilation targets",
+          "examples": [
+            "rustup target list",
+            "rustup target add x86_64-unknown-linux-musl",
+            "rustup target add wasm32-unknown-unknown"
+          ]
+        },
+        {
+          "command": "rustup show",
+          "description": "Show active toolchain",
+          "examples": [
+            "rustup show"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Project Structure",
+      "description": "Standard Rust project layout",
+      "structure": {
+        "Cargo.toml": "Package manifest",
+        "src/main.rs": "Binary entry point",
+        "src/lib.rs": "Library entry point",
+        "src/bin/": "Additional binaries",
+        "tests/": "Integration tests",
+        "benches/": "Benchmarks",
+        "examples/": "Example programs",
+        "target/": "Build output (gitignored)",
+        "Cargo.lock": "Dependency lock file"
+      }
+    },
+    {
+      "name": "Cargo.toml",
+      "description": "Package manifest file",
+      "sections": [
+        {
+          "name": "[package]",
+          "description": "Package metadata",
+          "example": "[package]\nname = \"my_project\"\nversion = \"0.1.0\"\nedition = \"2021\"\nauthors = [\"Your Name <you@example.com>\"]\nlicense = \"MIT\"\ndescription = \"A short description\""
+        },
+        {
+          "name": "[dependencies]",
+          "description": "Runtime dependencies",
+          "example": "[dependencies]\nserde = { version = \"1.0\", features = [\"derive\"] }\ntokio = { version = \"1\", features = [\"full\"] }\nanyhow = \"1.0\""
+        },
+        {
+          "name": "[dev-dependencies]",
+          "description": "Development dependencies (tests, benchmarks)",
+          "example": "[dev-dependencies]\ntempfile = \"3\"\nproptest = \"1\""
+        },
+        {
+          "name": "[features]",
+          "description": "Optional features",
+          "example": "[features]\ndefault = [\"std\"]\nstd = []\nno_std = []\nextra = [\"serde\", \"tokio\"]"
+        },
+        {
+          "name": "[[bin]]",
+          "description": "Binary targets",
+          "example": "[[bin]]\nname = \"my_app\"\npath = \"src/main.rs\""
+        }
+      ]
+    },
+    {
+      "name": "Testing",
+      "description": "Writing and running tests",
+      "test_types": [
+        {
+          "name": "Unit Tests",
+          "description": "Tests in the same file as code",
+          "example": "#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn test_addition() {\n        assert_eq!(2 + 2, 4);\n    }\n\n    #[test]\n    #[should_panic]\n    fn test_panic() {\n        panic!(\"This test should panic\");\n    }\n}"
+        },
+        {
+          "name": "Integration Tests",
+          "description": "Tests in tests/ directory",
+          "example": "// tests/integration_test.rs\nuse my_crate::public_function;\n\n#[test]\nfn test_integration() {\n    assert_eq!(public_function(), expected_value);\n}"
+        },
+        {
+          "name": "Doc Tests",
+          "description": "Tests in documentation comments",
+          "example": "/// Adds two numbers\n///\n/// # Examples\n///\n/// ```\n/// let result = my_crate::add(2, 3);\n/// assert_eq!(result, 5);\n/// ```\npub fn add(a: i32, b: i32) -> i32 {\n    a + b\n}"
+        }
+      ],
+      "assertions": [
+        {
+          "macro": "assert!(condition)",
+          "description": "Assert condition is true"
+        },
+        {
+          "macro": "assert_eq!(left, right)",
+          "description": "Assert equality"
+        },
+        {
+          "macro": "assert_ne!(left, right)",
+          "description": "Assert inequality"
+        },
+        {
+          "macro": "debug_assert!(condition)",
+          "description": "Assert in debug mode only"
+        }
+      ]
+    },
+    {
+      "name": "Common Development Workflow",
+      "description": "Typical development cycle",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Create project",
+          "command": "cargo new my_project"
+        },
+        {
+          "step": 2,
+          "action": "Add dependencies",
+          "command": "cargo add <crate_name>"
+        },
+        {
+          "step": 3,
+          "action": "Write code",
+          "command": "Use your editor"
+        },
+        {
+          "step": 4,
+          "action": "Check for errors",
+          "command": "cargo check"
+        },
+        {
+          "step": 5,
+          "action": "Run tests",
+          "command": "cargo test"
+        },
+        {
+          "step": 6,
+          "action": "Lint code",
+          "command": "cargo clippy"
+        },
+        {
+          "step": 7,
+          "action": "Format code",
+          "command": "cargo fmt"
+        },
+        {
+          "step": 8,
+          "action": "Build release",
+          "command": "cargo build --release"
+        },
+        {
+          "step": 9,
+          "action": "Run program",
+          "command": "cargo run --release"
+        }
+      ]
+    }
+  ]
+}

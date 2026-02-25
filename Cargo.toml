@@ -12,6 +12,7 @@ name = "agent"
 path = "src/main.rs"
 
 [dependencies]
+# Core async and utilities
 tokio = { version = "1.42", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -25,6 +26,26 @@ regex = "1.10"
 sha2 = "0.10"
 toml = "0.8"
 urlencoding = "2.1"
+
+# Training system
+pulldown-cmark = "0.9"      # Markdown parsing
+syn = { version = "2.0", features = ["full", "visit"] }  # Rust AST parsing
+quote = "1.0"               # Code generation
+
+# Memory systems
+rusqlite = { version = "0.31", features = ["bundled"] }  # SQL database
+uuid = { version = "1.6", features = ["v4", "serde"] }   # Unique IDs
+
+# Orchestration
+crossbeam = "0.8"           # Message queues
+
+# Optional: Web interface
+axum = { version = "0.7", optional = true }
+tower = { version = "0.4", optional = true }
+
+[features]
+default = []
+web = ["axum", "tower"]
 
 [dev-dependencies]
 tempfile = "3.8"

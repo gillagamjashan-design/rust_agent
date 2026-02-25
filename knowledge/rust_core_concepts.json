@@ -1,0 +1,375 @@
+{
+  "title": "Rust Core Concepts - Complete Knowledge Base",
+  "version": "1.0.0",
+  "description": "Comprehensive Rust programming knowledge for focused learning",
+  "modules": [
+    {
+      "id": "ownership",
+      "name": "Ownership System",
+      "priority": 1,
+      "concepts": [
+        {
+          "name": "Ownership Rules",
+          "description": "The three fundamental rules of Rust ownership",
+          "rules": [
+            "Each value in Rust has a variable that's called its owner",
+            "There can only be one owner at a time",
+            "When the owner goes out of scope, the value will be dropped"
+          ],
+          "examples": [
+            {
+              "title": "Basic ownership transfer",
+              "code": "let s1 = String::from(\"hello\");\nlet s2 = s1; // s1 is moved to s2\n// println!(\"{}\", s1); // ERROR: s1 no longer valid",
+              "explanation": "String is heap-allocated, so assignment moves ownership"
+            },
+            {
+              "title": "Copy types",
+              "code": "let x = 5;\nlet y = x; // x is copied, not moved\nprintln!(\"x = {}, y = {}\", x, y); // Both valid",
+              "explanation": "Integers implement Copy trait, so they're copied on assignment"
+            }
+          ],
+          "common_errors": [
+            "E0382: use of moved value"
+          ]
+        },
+        {
+          "name": "Move Semantics",
+          "description": "How Rust transfers ownership between variables",
+          "key_points": [
+            "Heap-allocated types (String, Vec, Box) are moved by default",
+            "Stack-only types implementing Copy are copied instead",
+            "Functions take ownership unless using references",
+            "Returning values transfers ownership back to caller"
+          ],
+          "examples": [
+            {
+              "title": "Function taking ownership",
+              "code": "fn takes_ownership(s: String) {\n    println!(\"{}\", s);\n} // s goes out of scope and is dropped\n\nlet s = String::from(\"hello\");\ntakes_ownership(s);\n// s is no longer valid here",
+              "explanation": "Function parameter takes ownership of the String"
+            },
+            {
+              "title": "Returning ownership",
+              "code": "fn gives_ownership() -> String {\n    let s = String::from(\"hello\");\n    s // returned value moves out\n}\n\nlet s = gives_ownership(); // s receives ownership",
+              "explanation": "Return value transfers ownership to the caller"
+            }
+          ]
+        },
+        {
+          "name": "Stack vs Heap",
+          "description": "Understanding memory allocation in Rust",
+          "stack_types": [
+            "Fixed-size types: i32, f64, bool, char",
+            "Fixed-size arrays: [i32; 5]",
+            "Tuples of stack types: (i32, bool)",
+            "Types implementing Copy trait"
+          ],
+          "heap_types": [
+            "String (owned string)",
+            "Vec<T> (growable array)",
+            "Box<T> (heap pointer)",
+            "Rc<T>, Arc<T> (reference counted)"
+          ],
+          "examples": [
+            {
+              "title": "Stack allocation",
+              "code": "let x: i32 = 5; // stored on stack\nlet arr: [i32; 3] = [1, 2, 3]; // stack array",
+              "explanation": "Fixed-size types are stored on the stack"
+            },
+            {
+              "title": "Heap allocation",
+              "code": "let s: String = String::from(\"hello\"); // heap\nlet v: Vec<i32> = vec![1, 2, 3]; // heap\nlet b: Box<i32> = Box::new(5); // heap",
+              "explanation": "Dynamic-size types are stored on the heap"
+            }
+          ]
+        },
+        {
+          "name": "Drop Trait",
+          "description": "Automatic cleanup when values go out of scope",
+          "key_points": [
+            "Drop::drop is called automatically when value goes out of scope",
+            "Cannot call drop() manually - use std::mem::drop() instead",
+            "Drop order: inner to outer, last to first in scope",
+            "Prevents resource leaks (memory, file handles, etc.)"
+          ],
+          "examples": [
+            {
+              "title": "Automatic drop",
+              "code": "{\n    let s = String::from(\"hello\");\n    // use s\n} // s.drop() called here automatically",
+              "explanation": "String is dropped when it goes out of scope"
+            },
+            {
+              "title": "Manual drop",
+              "code": "let s = String::from(\"hello\");\nstd::mem::drop(s); // explicitly drop early\n// s is no longer valid",
+              "explanation": "Use std::mem::drop to drop value before end of scope"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "borrowing",
+      "name": "References and Borrowing",
+      "priority": 2,
+      "concepts": [
+        {
+          "name": "Borrowing Rules",
+          "description": "The fundamental borrowing rules enforced by the borrow checker",
+          "rules": [
+            "You can have either one mutable reference OR any number of immutable references",
+            "References must always be valid (no dangling references)",
+            "Mutable and immutable references cannot coexist for the same data"
+          ],
+          "examples": [
+            {
+              "title": "Immutable borrowing",
+              "code": "let s = String::from(\"hello\");\nlet r1 = &s;\nlet r2 = &s;\nprintln!(\"{} and {}\", r1, r2); // OK: multiple immutable refs",
+              "explanation": "Multiple immutable references are allowed"
+            },
+            {
+              "title": "Mutable borrowing",
+              "code": "let mut s = String::from(\"hello\");\nlet r = &mut s;\nr.push_str(\" world\");\nprintln!(\"{}\", r);",
+              "explanation": "Only one mutable reference allowed at a time"
+            },
+            {
+              "title": "Borrowing conflict",
+              "code": "let mut s = String::from(\"hello\");\nlet r1 = &s; // immutable borrow\nlet r2 = &mut s; // ERROR: cannot borrow as mutable",
+              "explanation": "Cannot mix mutable and immutable borrows"
+            }
+          ],
+          "common_errors": [
+            "E0502: cannot borrow as mutable because it is also borrowed as immutable",
+            "E0499: cannot borrow as mutable more than once at a time",
+            "E0505: cannot move out of because it is borrowed"
+          ]
+        },
+        {
+          "name": "Reference Lifetimes",
+          "description": "How long references are valid",
+          "key_points": [
+            "Lifetime is the scope for which a reference is valid",
+            "Borrow checker ensures references don't outlive their data",
+            "Non-Lexical Lifetimes (NLL) allow more flexible borrowing",
+            "Compiler often infers lifetimes automatically"
+          ],
+          "examples": [
+            {
+              "title": "Valid lifetime",
+              "code": "let r;\n{\n    let x = 5;\n    r = &x; // ERROR: x doesn't live long enough\n}\n// println!(\"{}\", r);",
+              "explanation": "Reference cannot outlive the data it points to"
+            },
+            {
+              "title": "NLL allows this",
+              "code": "let mut s = String::from(\"hello\");\nlet r1 = &s;\nprintln!(\"{}\", r1);\nlet r2 = &mut s; // OK: r1 no longer used\nr2.push_str(\" world\");",
+              "explanation": "NLL allows reborrow after last use of previous reference"
+            }
+          ]
+        },
+        {
+          "name": "Slices",
+          "description": "References to contiguous sequences",
+          "types": [
+            "String slices: &str (immutable reference to string data)",
+            "Array slices: &[T] (immutable reference to array)",
+            "Mutable slices: &mut str, &mut [T]"
+          ],
+          "examples": [
+            {
+              "title": "String slices",
+              "code": "let s = String::from(\"hello world\");\nlet hello = &s[0..5];\nlet world = &s[6..11];\nprintln!(\"{} {}\", hello, world);",
+              "explanation": "String slices reference parts of a String"
+            },
+            {
+              "title": "Array slices",
+              "code": "let arr = [1, 2, 3, 4, 5];\nlet slice = &arr[1..4]; // [2, 3, 4]\nprintln!(\"{:?}\", slice);",
+              "explanation": "Array slices reference parts of an array"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lifetimes",
+      "name": "Lifetime Annotations",
+      "priority": 3,
+      "concepts": [
+        {
+          "name": "Explicit Lifetimes",
+          "description": "Annotating lifetimes in functions and structs",
+          "syntax": [
+            "Generic lifetime parameter: 'a, 'b, 'static",
+            "Function: fn foo<'a>(x: &'a str) -> &'a str",
+            "Struct: struct Foo<'a> { x: &'a str }",
+            "Lifetime bounds: T: 'a means T must live at least as long as 'a"
+          ],
+          "examples": [
+            {
+              "title": "Function with lifetime",
+              "code": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() > y.len() { x } else { y }\n}",
+              "explanation": "Return value lifetime tied to input parameters"
+            },
+            {
+              "title": "Struct with lifetime",
+              "code": "struct ImportantExcerpt<'a> {\n    part: &'a str,\n}\n\nlet novel = String::from(\"Call me Ishmael...\");\nlet excerpt = ImportantExcerpt {\n    part: &novel[0..10],\n};",
+              "explanation": "Struct holds a reference with explicit lifetime"
+            },
+            {
+              "title": "Multiple lifetimes",
+              "code": "fn foo<'a, 'b>(x: &'a str, y: &'b str) -> &'a str {\n    x // return value lifetime is 'a, not 'b\n}",
+              "explanation": "Different parameters can have different lifetimes"
+            }
+          ]
+        },
+        {
+          "name": "Lifetime Elision",
+          "description": "Compiler's automatic lifetime inference",
+          "rules": [
+            "Each elided lifetime in parameters gets a distinct lifetime parameter",
+            "If exactly one input lifetime, that lifetime is assigned to all output lifetimes",
+            "If multiple input lifetimes and one is &self or &mut self, lifetime of self is assigned to all output lifetimes"
+          ],
+          "examples": [
+            {
+              "title": "Elision rule 1",
+              "code": "fn first_word(s: &str) -> &str\n// Expands to:\nfn first_word<'a>(s: &'a str) -> &'a str",
+              "explanation": "Single input lifetime is used for output"
+            },
+            {
+              "title": "Elision with self",
+              "code": "impl<'a> Foo<'a> {\n    fn bar(&self, s: &str) -> &str {\n        // self's lifetime used for return\n    }\n}",
+              "explanation": "Method uses self's lifetime for return value"
+            }
+          ]
+        },
+        {
+          "name": "Static Lifetime",
+          "description": "The 'static lifetime lasts for entire program",
+          "key_points": [
+            "'static means reference is valid for entire program duration",
+            "String literals have 'static lifetime: &'static str",
+            "Use sparingly - often indicates design issue",
+            "Different from static variables"
+          ],
+          "examples": [
+            {
+              "title": "String literal",
+              "code": "let s: &'static str = \"I have a static lifetime.\";\n// String stored in binary, valid for program lifetime",
+              "explanation": "String literals are 'static by default"
+            },
+            {
+              "title": "Returning static",
+              "code": "fn get_static() -> &'static str {\n    \"static string\"\n}",
+              "explanation": "Function can return 'static reference"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "traits",
+      "name": "Traits and Generics",
+      "priority": 4,
+      "concepts": [
+        {
+          "name": "Trait Basics",
+          "description": "Defining and implementing traits",
+          "key_points": [
+            "Traits define shared behavior across types",
+            "Similar to interfaces in other languages",
+            "Can have default implementations",
+            "Trait methods can have self parameter"
+          ],
+          "examples": [
+            {
+              "title": "Define and implement trait",
+              "code": "trait Summary {\n    fn summarize(&self) -> String;\n}\n\nstruct Article {\n    title: String,\n    content: String,\n}\n\nimpl Summary for Article {\n    fn summarize(&self) -> String {\n        format!(\"{}: {}...\", self.title, &self.content[0..20])\n    }\n}",
+              "explanation": "Trait defines behavior, impl provides implementation"
+            },
+            {
+              "title": "Default implementation",
+              "code": "trait Summary {\n    fn summarize(&self) -> String {\n        String::from(\"(Read more...)\")\n    }\n}\n\n// Types can use default or override it",
+              "explanation": "Traits can provide default method implementations"
+            }
+          ]
+        },
+        {
+          "name": "Trait Bounds",
+          "description": "Constraining generic types",
+          "syntax": [
+            "Where clause: fn foo<T>(x: T) where T: Display + Clone",
+            "Inline bounds: fn foo<T: Display + Clone>(x: T)",
+            "Impl trait: fn foo(x: impl Display + Clone)",
+            "Return position: fn foo() -> impl Iterator<Item = i32>"
+          ],
+          "examples": [
+            {
+              "title": "Generic with trait bound",
+              "code": "use std::fmt::Display;\n\nfn print_it<T: Display>(value: T) {\n    println!(\"{}\", value);\n}\n\nprint_it(5);\nprint_it(\"hello\");",
+              "explanation": "T must implement Display trait"
+            },
+            {
+              "title": "Multiple bounds",
+              "code": "fn foo<T: Display + Clone>(x: T) -> T {\n    println!(\"{}\", x);\n    x.clone()\n}",
+              "explanation": "T must implement both Display and Clone"
+            },
+            {
+              "title": "Where clause",
+              "code": "fn foo<T, U>(t: T, u: U) -> String\n    where T: Display + Clone,\n          U: Clone + Debug\n{\n    format!(\"{}\", t)\n}",
+              "explanation": "Where clause for complex bounds"
+            }
+          ]
+        },
+        {
+          "name": "Common Traits",
+          "description": "Standard library traits",
+          "traits": [
+            {
+              "name": "Clone",
+              "description": "Explicit duplication via .clone()",
+              "example": "let s2 = s1.clone();"
+            },
+            {
+              "name": "Copy",
+              "description": "Implicit bitwise copy",
+              "example": "let y = x; // x still valid if Copy"
+            },
+            {
+              "name": "Debug",
+              "description": "Format with {:?}",
+              "example": "#[derive(Debug)]"
+            },
+            {
+              "name": "Display",
+              "description": "Format with {}",
+              "example": "impl Display for Type { ... }"
+            },
+            {
+              "name": "PartialEq",
+              "description": "Equality comparison ==",
+              "example": "#[derive(PartialEq)]"
+            },
+            {
+              "name": "Eq",
+              "description": "Full equality (reflexive, symmetric, transitive)",
+              "example": "#[derive(Eq, PartialEq)]"
+            },
+            {
+              "name": "PartialOrd",
+              "description": "Partial ordering <, >, <=, >=",
+              "example": "#[derive(PartialOrd)]"
+            },
+            {
+              "name": "Ord",
+              "description": "Total ordering",
+              "example": "#[derive(Ord, PartialOrd, Eq, PartialEq)]"
+            },
+            {
+              "name": "Default",
+              "description": "Default value constructor",
+              "example": "let x = T::default();"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

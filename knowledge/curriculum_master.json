@@ -1,0 +1,364 @@
+{
+  "title": "Rust Programming - Complete Focused Curriculum",
+  "version": "2.0.0",
+  "description": "Comprehensive, focused Rust-only learning system",
+  "philosophy": {
+    "core_principle": "Learn ONLY Rust - no general programming, no other languages",
+    "approach": "Progressive mastery through structured stages",
+    "focus_areas": [
+      "Ownership and borrowing (Rust's unique features)",
+      "Type system and traits",
+      "Standard library and common patterns",
+      "Popular ecosystem crates",
+      "Async/await and concurrency",
+      "Toolchain and development workflow"
+    ]
+  },
+  "knowledge_sources": [
+    {
+      "file": "rust_core_concepts.json",
+      "topics": ["ownership", "borrowing", "lifetimes", "traits"],
+      "priority": 1,
+      "description": "Fundamental Rust concepts"
+    },
+    {
+      "file": "rust_standard_library.json",
+      "topics": ["collections", "error_handling", "smart_pointers", "iterators"],
+      "priority": 2,
+      "description": "Essential std library types"
+    },
+    {
+      "file": "rust_async_concurrency.json",
+      "topics": ["async_await", "threads", "synchronization"],
+      "priority": 3,
+      "description": "Concurrent programming in Rust"
+    },
+    {
+      "file": "rust_popular_crates.json",
+      "topics": ["tokio", "serde", "anyhow", "reqwest", "clap"],
+      "priority": 4,
+      "description": "Commonly used crates"
+    },
+    {
+      "file": "rust_patterns_idioms.json",
+      "topics": ["patterns", "idioms", "best_practices"],
+      "priority": 5,
+      "description": "Rust patterns and idioms"
+    },
+    {
+      "file": "rust_toolchain_cargo.json",
+      "topics": ["cargo", "rustup", "testing", "project_structure"],
+      "priority": 2,
+      "description": "Development tools"
+    }
+  ],
+  "learning_stages": [
+    {
+      "stage": 1,
+      "name": "Ownership Foundations",
+      "duration_estimate": "2-3 weeks",
+      "objectives": [
+        "Understand Rust's ownership system completely",
+        "Master move semantics and Copy trait",
+        "Know when values are on stack vs heap",
+        "Understand Drop trait and RAII"
+      ],
+      "topics": [
+        {
+          "topic": "ownership",
+          "subtopics": ["ownership_rules", "move_semantics", "stack_vs_heap", "drop_trait"],
+          "source": "rust_core_concepts.json"
+        }
+      ],
+      "exercises": [
+        "Fix ownership errors in broken code",
+        "Implement types with custom Drop",
+        "Understand when Copy is appropriate"
+      ],
+      "success_criteria": [
+        "Can explain ownership rules without looking them up",
+        "Can predict when moves occur",
+        "Understands difference between stack and heap allocation"
+      ]
+    },
+    {
+      "stage": 2,
+      "name": "Borrowing & References",
+      "duration_estimate": "2-3 weeks",
+      "objectives": [
+        "Master borrowing rules",
+        "Understand reference lifetimes",
+        "Work with slices",
+        "Avoid dangling references"
+      ],
+      "topics": [
+        {
+          "topic": "borrowing",
+          "subtopics": ["borrowing_rules", "reference_lifetimes", "slices"],
+          "source": "rust_core_concepts.json"
+        }
+      ],
+      "exercises": [
+        "Fix borrowing conflicts",
+        "Write functions with multiple borrows",
+        "Work with string and array slices"
+      ],
+      "success_criteria": [
+        "Can apply borrowing rules correctly",
+        "Understands when to use &T vs &mut T",
+        "Can work with slices effectively"
+      ]
+    },
+    {
+      "stage": 3,
+      "name": "Lifetimes & Type System",
+      "duration_estimate": "3-4 weeks",
+      "objectives": [
+        "Annotate explicit lifetimes",
+        "Understand lifetime elision",
+        "Master trait system",
+        "Write generic code with trait bounds"
+      ],
+      "topics": [
+        {
+          "topic": "lifetimes",
+          "subtopics": ["explicit_lifetimes", "lifetime_elision", "static_lifetime"],
+          "source": "rust_core_concepts.json"
+        },
+        {
+          "topic": "traits",
+          "subtopics": ["trait_basics", "trait_bounds", "common_traits"],
+          "source": "rust_core_concepts.json"
+        }
+      ],
+      "exercises": [
+        "Write functions with lifetime annotations",
+        "Implement common traits (Debug, Display, etc.)",
+        "Write generic functions with trait bounds"
+      ],
+      "success_criteria": [
+        "Can annotate lifetimes correctly",
+        "Understands trait system",
+        "Can write generic code"
+      ]
+    },
+    {
+      "stage": 4,
+      "name": "Standard Library Mastery",
+      "duration_estimate": "3-4 weeks",
+      "objectives": [
+        "Master Vec, String, HashMap",
+        "Handle errors with Result and Option",
+        "Work with smart pointers (Box, Rc, Arc, RefCell)",
+        "Use iterators effectively"
+      ],
+      "topics": [
+        {
+          "topic": "collections",
+          "subtopics": ["vec", "string", "hashmap", "hashset"],
+          "source": "rust_standard_library.json"
+        },
+        {
+          "topic": "error_handling",
+          "subtopics": ["option", "result", "question_mark_operator"],
+          "source": "rust_standard_library.json"
+        },
+        {
+          "topic": "smart_pointers",
+          "subtopics": ["box", "rc", "arc", "refcell"],
+          "source": "rust_standard_library.json"
+        },
+        {
+          "topic": "iterators",
+          "subtopics": ["iterator_trait", "adapters", "consumers"],
+          "source": "rust_standard_library.json"
+        }
+      ],
+      "exercises": [
+        "Build data structures using collections",
+        "Implement error handling with Result",
+        "Use Rc and RefCell for shared ownership",
+        "Chain iterator operations"
+      ],
+      "success_criteria": [
+        "Comfortable with all major collections",
+        "Can handle errors idiomatically",
+        "Knows when to use each smart pointer",
+        "Can use iterator combinators"
+      ]
+    },
+    {
+      "stage": 5,
+      "name": "Concurrency & Async",
+      "duration_estimate": "4-5 weeks",
+      "objectives": [
+        "Understand async/await",
+        "Use tokio runtime",
+        "Work with threads safely",
+        "Use synchronization primitives (Mutex, channels, etc.)"
+      ],
+      "topics": [
+        {
+          "topic": "async_await",
+          "subtopics": ["async_basics", "futures", "tokio"],
+          "source": "rust_async_concurrency.json"
+        },
+        {
+          "topic": "threads",
+          "subtopics": ["spawning_threads", "send_sync"],
+          "source": "rust_async_concurrency.json"
+        },
+        {
+          "topic": "synchronization",
+          "subtopics": ["mutex", "rwlock", "channels", "atomics"],
+          "source": "rust_async_concurrency.json"
+        }
+      ],
+      "exercises": [
+        "Write async functions with tokio",
+        "Share state between threads with Arc<Mutex>",
+        "Use channels for message passing",
+        "Implement concurrent algorithms"
+      ],
+      "success_criteria": [
+        "Can write async code with tokio",
+        "Understands thread safety (Send/Sync)",
+        "Can safely share state between threads",
+        "Knows how to avoid deadlocks"
+      ]
+    },
+    {
+      "stage": 6,
+      "name": "Ecosystem & Tooling",
+      "duration_estimate": "3-4 weeks",
+      "objectives": [
+        "Master Cargo commands",
+        "Use popular crates (serde, anyhow, reqwest, clap)",
+        "Write tests",
+        "Apply Rust patterns and idioms"
+      ],
+      "topics": [
+        {
+          "topic": "cargo",
+          "subtopics": ["commands", "cargo_toml", "testing"],
+          "source": "rust_toolchain_cargo.json"
+        },
+        {
+          "topic": "popular_crates",
+          "subtopics": ["tokio", "serde", "anyhow", "reqwest", "clap"],
+          "source": "rust_popular_crates.json"
+        },
+        {
+          "topic": "patterns",
+          "subtopics": ["builder", "newtype", "raii", "extension_traits"],
+          "source": "rust_patterns_idioms.json"
+        }
+      ],
+      "exercises": [
+        "Build CLI apps with clap",
+        "Serialize/deserialize with serde",
+        "Make HTTP requests with reqwest",
+        "Apply Rust patterns in projects"
+      ],
+      "success_criteria": [
+        "Comfortable with Cargo workflow",
+        "Can use major ecosystem crates",
+        "Writes idiomatic Rust code",
+        "Can build complete applications"
+      ]
+    }
+  ],
+  "daily_learning_plan": {
+    "description": "Structured daily learning for efficient progress",
+    "routine": [
+      {
+        "activity": "Concept Study",
+        "duration": "30-45 minutes",
+        "description": "Study one concept from current stage",
+        "format": "Read knowledge base, understand examples"
+      },
+      {
+        "activity": "Hands-on Practice",
+        "duration": "60-90 minutes",
+        "description": "Write code applying the concept",
+        "format": "Fix broken code, implement exercises"
+      },
+      {
+        "activity": "Review & Quiz",
+        "duration": "15-30 minutes",
+        "description": "Test understanding",
+        "format": "Answer questions without looking up answers"
+      }
+    ],
+    "weekly_goals": [
+      "Master 2-3 major concepts",
+      "Complete 5-10 coding exercises",
+      "Build one small project applying learned concepts"
+    ]
+  },
+  "question_generation_strategy": {
+    "description": "How to generate focused Rust questions",
+    "principles": [
+      "Questions MUST be about Rust only",
+      "No general programming theory",
+      "Focus on practical Rust usage",
+      "Include code examples when possible",
+      "Progress from basic to advanced within each topic"
+    ],
+    "question_types": [
+      {
+        "type": "Conceptual",
+        "example": "What are the three rules of ownership in Rust?",
+        "purpose": "Test understanding of core concepts"
+      },
+      {
+        "type": "Code Analysis",
+        "example": "Why does this code fail to compile? [code snippet]",
+        "purpose": "Understand compiler errors and borrow checker"
+      },
+      {
+        "type": "Application",
+        "example": "When should you use Rc vs Arc?",
+        "purpose": "Apply knowledge to real scenarios"
+      },
+      {
+        "type": "Pattern Recognition",
+        "example": "What pattern is this code using? [code snippet]",
+        "purpose": "Recognize idiomatic Rust"
+      }
+    ],
+    "topic_rotation": {
+      "description": "Rotate through topics systematically",
+      "strategy": "Focus on current stage topics, review previous stage topics periodically",
+      "ratio": "70% current stage, 20% previous stage review, 10% advanced preview"
+    }
+  },
+  "learning_metrics": {
+    "track": [
+      "Stage progression (1-6)",
+      "Topics mastered per stage",
+      "Questions answered correctly",
+      "Exercises completed",
+      "Time spent per concept"
+    ],
+    "advancement_criteria": {
+      "per_stage": {
+        "min_topics_mastered": "80% of stage topics",
+        "min_exercises_completed": "75% of stage exercises",
+        "min_quiz_score": "85% on stage assessment"
+      }
+    }
+  },
+  "focus_enforcement": {
+    "description": "Ensure learning stays focused on Rust only",
+    "rules": [
+      "NO JavaScript, Python, Java, C++, or other languages",
+      "NO general programming theory without Rust context",
+      "NO web frameworks unless Rust-specific (Actix, Rocket, Axum)",
+      "YES to Rust-specific concepts (ownership, borrowing, lifetimes)",
+      "YES to Rust standard library",
+      "YES to popular Rust crates",
+      "YES to Rust toolchain (cargo, rustc, clippy, rustfmt)"
+    ]
+  }
+}

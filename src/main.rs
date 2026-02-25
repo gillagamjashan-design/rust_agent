@@ -1,14 +1,8 @@
-mod cache;
-mod claude_proxy;
-mod config;
-mod interactive_agent;
 mod learning_agent;
 mod proxy_agents;
-mod types;
-mod web_search;
 
 use clap::Parser;
-use interactive_agent::InteractiveAgent;
+use rust_agent::interactive_agent::InteractiveAgent;
 use learning_agent::LearningAgent;
 use proxy_agents::{ProxyAnswerAgent, ProxyQuestionAgent};
 

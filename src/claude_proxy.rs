@@ -317,4 +317,9 @@ Remember: Your goal is to make the student a Rust ownership EXPERT through:
             .map(|c| c.text.clone())
             .unwrap_or_default())
     }
+
+    /// Simple query method for general use (alias for send_request with no system prompt)
+    pub async fn query(&self, prompt: &str) -> Result<String> {
+        self.send_request(prompt.to_string(), None).await
+    }
 }

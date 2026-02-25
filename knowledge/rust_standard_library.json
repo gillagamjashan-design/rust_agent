@@ -1,0 +1,431 @@
+{
+  "title": "Rust Standard Library - Essential Types and Modules",
+  "version": "1.0.0",
+  "description": "Comprehensive guide to std library",
+  "modules": [
+    {
+      "id": "collections",
+      "name": "Collections",
+      "description": "Dynamic data structures",
+      "types": [
+        {
+          "name": "Vec<T>",
+          "description": "Growable array stored on heap",
+          "creation": [
+            "Vec::new()",
+            "vec![1, 2, 3]",
+            "Vec::with_capacity(10)"
+          ],
+          "common_methods": [
+            "push(value) - add to end",
+            "pop() -> Option<T> - remove from end",
+            "len() -> usize - get length",
+            "is_empty() -> bool - check if empty",
+            "get(index) -> Option<&T> - safe indexing",
+            "insert(index, value) - insert at position",
+            "remove(index) -> T - remove at position",
+            "clear() - remove all elements",
+            "iter() - immutable iterator",
+            "iter_mut() - mutable iterator",
+            "into_iter() - consuming iterator"
+          ],
+          "examples": [
+            {
+              "title": "Basic usage",
+              "code": "let mut v = Vec::new();\nv.push(1);\nv.push(2);\nv.push(3);\nprintln!(\"{:?}\", v); // [1, 2, 3]"
+            },
+            {
+              "title": "Iteration",
+              "code": "let v = vec![1, 2, 3];\nfor i in &v {\n    println!(\"{}\", i);\n}"
+            },
+            {
+              "title": "Mutable iteration",
+              "code": "let mut v = vec![1, 2, 3];\nfor i in &mut v {\n    *i *= 2;\n}\nprintln!(\"{:?}\", v); // [2, 4, 6]"
+            }
+          ]
+        },
+        {
+          "name": "String",
+          "description": "Growable UTF-8 encoded string",
+          "creation": [
+            "String::new()",
+            "String::from(\"text\")",
+            "\"text\".to_string()",
+            "String::with_capacity(10)"
+          ],
+          "common_methods": [
+            "push_str(&str) - append string slice",
+            "push(char) - append character",
+            "len() -> usize - byte length",
+            "is_empty() -> bool",
+            "chars() -> Chars - character iterator",
+            "bytes() -> Bytes - byte iterator",
+            "split_whitespace() - split on whitespace",
+            "split(pattern) - split on pattern",
+            "replace(from, to) - replace substring",
+            "trim() - remove whitespace",
+            "to_lowercase() - convert to lowercase",
+            "to_uppercase() - convert to uppercase"
+          ],
+          "examples": [
+            {
+              "title": "String concatenation",
+              "code": "let mut s = String::from(\"hello\");\ns.push_str(\" world\");\ns.push('!');\nprintln!(\"{}\", s); // hello world!"
+            },
+            {
+              "title": "String from format",
+              "code": "let s1 = \"hello\";\nlet s2 = \"world\";\nlet s = format!(\"{} {}\", s1, s2);"
+            },
+            {
+              "title": "Iterating characters",
+              "code": "let s = String::from(\"hello\");\nfor c in s.chars() {\n    println!(\"{}\", c);\n}"
+            }
+          ]
+        },
+        {
+          "name": "HashMap<K, V>",
+          "description": "Key-value hash map",
+          "creation": [
+            "HashMap::new()",
+            "HashMap::with_capacity(10)",
+            "collect from iterator"
+          ],
+          "common_methods": [
+            "insert(k, v) -> Option<V> - insert or update",
+            "get(&k) -> Option<&V> - get value",
+            "get_mut(&k) -> Option<&mut V> - mutable get",
+            "remove(&k) -> Option<V> - remove entry",
+            "contains_key(&k) -> bool - check existence",
+            "entry(k) - Entry API for advanced usage",
+            "iter() - iterate over entries",
+            "keys() - iterate over keys",
+            "values() - iterate over values"
+          ],
+          "examples": [
+            {
+              "title": "Basic usage",
+              "code": "use std::collections::HashMap;\n\nlet mut map = HashMap::new();\nmap.insert(\"blue\", 10);\nmap.insert(\"yellow\", 50);\n\nif let Some(value) = map.get(\"blue\") {\n    println!(\"{}\", value);\n}"
+            },
+            {
+              "title": "Entry API",
+              "code": "use std::collections::HashMap;\n\nlet mut map = HashMap::new();\nmap.entry(\"key\").or_insert(0);\n*map.entry(\"key\").or_insert(0) += 1;"
+            },
+            {
+              "title": "From iterator",
+              "code": "use std::collections::HashMap;\n\nlet tuples = vec![(\"a\", 1), (\"b\", 2)];\nlet map: HashMap<_, _> = tuples.into_iter().collect();"
+            }
+          ]
+        },
+        {
+          "name": "HashSet<T>",
+          "description": "Set of unique values",
+          "common_methods": [
+            "insert(value) -> bool - add value",
+            "contains(&value) -> bool - check membership",
+            "remove(&value) -> bool - remove value",
+            "union(&other) - set union",
+            "intersection(&other) - set intersection",
+            "difference(&other) - set difference"
+          ],
+          "examples": [
+            {
+              "title": "Basic usage",
+              "code": "use std::collections::HashSet;\n\nlet mut set = HashSet::new();\nset.insert(1);\nset.insert(2);\nset.insert(1); // duplicate ignored\n\nprintln!(\"{}\", set.contains(&1)); // true"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "error_handling",
+      "name": "Error Handling",
+      "description": "Result, Option, and error types",
+      "types": [
+        {
+          "name": "Option<T>",
+          "description": "Represents optional value",
+          "variants": [
+            "Some(T) - contains a value",
+            "None - no value"
+          ],
+          "common_methods": [
+            "unwrap() -> T - panics if None",
+            "expect(msg) -> T - panics with message if None",
+            "unwrap_or(default) -> T - returns default if None",
+            "unwrap_or_else(f) -> T - computes default if None",
+            "map(f) -> Option<U> - transform the value",
+            "and_then(f) -> Option<U> - chain operations",
+            "is_some() -> bool - check if Some",
+            "is_none() -> bool - check if None",
+            "as_ref() -> Option<&T> - borrow the value",
+            "take() -> Option<T> - take the value, leaving None"
+          ],
+          "examples": [
+            {
+              "title": "Basic usage",
+              "code": "let some_number = Some(5);\nlet no_number: Option<i32> = None;\n\nif let Some(n) = some_number {\n    println!(\"Number: {}\", n);\n}"
+            },
+            {
+              "title": "Unwrap with default",
+              "code": "let value = Some(10).unwrap_or(0); // 10\nlet value = None.unwrap_or(0); // 0"
+            },
+            {
+              "title": "Map transformation",
+              "code": "let maybe_num = Some(3);\nlet maybe_str = maybe_num.map(|n| n.to_string());\n// Some(\"3\")"
+            }
+          ]
+        },
+        {
+          "name": "Result<T, E>",
+          "description": "Represents success or failure",
+          "variants": [
+            "Ok(T) - successful result",
+            "Err(E) - error result"
+          ],
+          "common_methods": [
+            "unwrap() -> T - panics if Err",
+            "expect(msg) -> T - panics with message if Err",
+            "unwrap_or(default) -> T - returns default if Err",
+            "unwrap_or_else(f) -> T - computes default if Err",
+            "map(f) -> Result<U, E> - transform Ok value",
+            "map_err(f) -> Result<T, F> - transform Err value",
+            "and_then(f) -> Result<U, E> - chain operations",
+            "is_ok() -> bool - check if Ok",
+            "is_err() -> bool - check if Err",
+            "ok() -> Option<T> - convert to Option",
+            "err() -> Option<E> - get error as Option"
+          ],
+          "operators": [
+            {
+              "name": "? operator",
+              "description": "Early return on error",
+              "example": "let value = some_function()?; // returns Err if function fails"
+            }
+          ],
+          "examples": [
+            {
+              "title": "Basic usage",
+              "code": "fn divide(a: f64, b: f64) -> Result<f64, String> {\n    if b == 0.0 {\n        Err(String::from(\"division by zero\"))\n    } else {\n        Ok(a / b)\n    }\n}\n\nmatch divide(10.0, 2.0) {\n    Ok(result) => println!(\"Result: {}\", result),\n    Err(e) => println!(\"Error: {}\", e),\n}"
+            },
+            {
+              "title": "Using ? operator",
+              "code": "use std::fs::File;\nuse std::io::{self, Read};\n\nfn read_file(path: &str) -> io::Result<String> {\n    let mut file = File::open(path)?;\n    let mut contents = String::new();\n    file.read_to_string(&mut contents)?;\n    Ok(contents)\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smart_pointers",
+      "name": "Smart Pointers",
+      "description": "Heap allocation and reference counting",
+      "types": [
+        {
+          "name": "Box<T>",
+          "description": "Heap-allocated value",
+          "use_cases": [
+            "Allocate large data on heap",
+            "Transfer ownership of heap data",
+            "Trait objects (Box<dyn Trait>)",
+            "Recursive types"
+          ],
+          "examples": [
+            {
+              "title": "Basic box",
+              "code": "let b = Box::new(5);\nprintln!(\"b = {}\", b);"
+            },
+            {
+              "title": "Recursive type",
+              "code": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\n\nlet list = Cons(1, Box::new(Cons(2, Box::new(Nil))));"
+            }
+          ]
+        },
+        {
+          "name": "Rc<T>",
+          "description": "Reference counted pointer (single-threaded)",
+          "use_cases": [
+            "Multiple ownership of same data",
+            "Graph data structures",
+            "Sharing read-only data"
+          ],
+          "common_methods": [
+            "Rc::new(value) - create new Rc",
+            "Rc::clone(&rc) - increment reference count",
+            "Rc::strong_count(&rc) - get reference count",
+            "Rc::downgrade(&rc) - create Weak reference"
+          ],
+          "examples": [
+            {
+              "title": "Multiple ownership",
+              "code": "use std::rc::Rc;\n\nlet a = Rc::new(5);\nlet b = Rc::clone(&a);\nlet c = Rc::clone(&a);\n\nprintln!(\"count: {}\", Rc::strong_count(&a)); // 3"
+            }
+          ],
+          "notes": [
+            "Not thread-safe - use Arc for multi-threading",
+            "Cannot get mutable reference - use RefCell for interior mutability"
+          ]
+        },
+        {
+          "name": "Arc<T>",
+          "description": "Atomic reference counted pointer (thread-safe)",
+          "use_cases": [
+            "Share data across threads",
+            "Thread-safe reference counting"
+          ],
+          "examples": [
+            {
+              "title": "Sharing between threads",
+              "code": "use std::sync::Arc;\nuse std::thread;\n\nlet data = Arc::new(vec![1, 2, 3]);\n\nlet data_clone = Arc::clone(&data);\nlet handle = thread::spawn(move || {\n    println!(\"{:?}\", data_clone);\n});\n\nhandle.join().unwrap();"
+            }
+          ]
+        },
+        {
+          "name": "RefCell<T>",
+          "description": "Interior mutability with runtime borrow checking",
+          "use_cases": [
+            "Mutate data when you only have immutable reference",
+            "Mock objects in tests",
+            "Circumvent compile-time borrow checker (carefully)"
+          ],
+          "common_methods": [
+            "borrow() -> Ref<T> - immutable borrow (runtime checked)",
+            "borrow_mut() -> RefMut<T> - mutable borrow (runtime checked)",
+            "try_borrow() -> Result<Ref<T>> - fallible borrow",
+            "try_borrow_mut() -> Result<RefMut<T>> - fallible mutable borrow"
+          ],
+          "examples": [
+            {
+              "title": "Interior mutability",
+              "code": "use std::cell::RefCell;\n\nlet data = RefCell::new(5);\n\n{\n    let mut val = data.borrow_mut();\n    *val += 1;\n}\n\nprintln!(\"{}\", data.borrow()); // 6"
+            },
+            {
+              "title": "Rc + RefCell pattern",
+              "code": "use std::rc::Rc;\nuse std::cell::RefCell;\n\nlet data = Rc::new(RefCell::new(5));\n\nlet a = Rc::clone(&data);\nlet b = Rc::clone(&data);\n\n*a.borrow_mut() += 10;\n*b.borrow_mut() += 20;\n\nprintln!(\"{}\", data.borrow()); // 35"
+            }
+          ],
+          "warnings": [
+            "Panics if borrowing rules violated at runtime",
+            "Use carefully - prefer compile-time checks when possible"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "iterators",
+      "name": "Iterators",
+      "description": "Iterator trait and adapters",
+      "concepts": [
+        {
+          "name": "Iterator Trait",
+          "description": "Core iterator functionality",
+          "methods": [
+            "next(&mut self) -> Option<Self::Item> - get next value"
+          ],
+          "examples": [
+            {
+              "title": "Implementing Iterator",
+              "code": "struct Counter {\n    count: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<Self::Item> {\n        self.count += 1;\n        if self.count <= 5 {\n            Some(self.count)\n        } else {\n            None\n        }\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Iterator Adapters",
+          "description": "Methods that transform iterators",
+          "methods": [
+            {
+              "name": "map",
+              "description": "Transform each element",
+              "example": "iter.map(|x| x * 2)"
+            },
+            {
+              "name": "filter",
+              "description": "Keep elements matching predicate",
+              "example": "iter.filter(|x| x % 2 == 0)"
+            },
+            {
+              "name": "take",
+              "description": "Take first n elements",
+              "example": "iter.take(5)"
+            },
+            {
+              "name": "skip",
+              "description": "Skip first n elements",
+              "example": "iter.skip(3)"
+            },
+            {
+              "name": "zip",
+              "description": "Combine two iterators",
+              "example": "iter1.zip(iter2)"
+            },
+            {
+              "name": "enumerate",
+              "description": "Add index to elements",
+              "example": "iter.enumerate()"
+            },
+            {
+              "name": "flat_map",
+              "description": "Map and flatten",
+              "example": "iter.flat_map(|x| vec![x, x])"
+            },
+            {
+              "name": "chain",
+              "description": "Chain iterators",
+              "example": "iter1.chain(iter2)"
+            }
+          ]
+        },
+        {
+          "name": "Iterator Consumers",
+          "description": "Methods that consume iterators",
+          "methods": [
+            {
+              "name": "collect",
+              "description": "Collect into collection",
+              "example": "iter.collect::<Vec<_>>()"
+            },
+            {
+              "name": "fold",
+              "description": "Fold/reduce elements",
+              "example": "iter.fold(0, |acc, x| acc + x)"
+            },
+            {
+              "name": "sum",
+              "description": "Sum all elements",
+              "example": "iter.sum::<i32>()"
+            },
+            {
+              "name": "count",
+              "description": "Count elements",
+              "example": "iter.count()"
+            },
+            {
+              "name": "any",
+              "description": "Check if any match",
+              "example": "iter.any(|x| x > 5)"
+            },
+            {
+              "name": "all",
+              "description": "Check if all match",
+              "example": "iter.all(|x| x > 0)"
+            },
+            {
+              "name": "find",
+              "description": "Find first matching",
+              "example": "iter.find(|x| x % 2 == 0)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "Chaining adapters",
+          "code": "let v = vec![1, 2, 3, 4, 5];\nlet result: Vec<_> = v.iter()\n    .filter(|x| *x % 2 == 0)\n    .map(|x| x * 2)\n    .collect();\n// result = [4, 8]"
+        },
+        {
+          "title": "Using fold",
+          "code": "let v = vec![1, 2, 3, 4, 5];\nlet sum = v.iter().fold(0, |acc, x| acc + x);\n// sum = 15"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/autocfg-aba430aa48ce4fb3.d: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libautocfg-aba430aa48ce4fb3.rlib: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libautocfg-aba430aa48ce4fb3.rmeta: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs:

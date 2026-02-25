@@ -1,0 +1,10 @@
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/time_core-004bb0ab00ee1a47.d: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libtime_core-004bb0ab00ee1a47.rlib: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libtime_core-004bb0ab00ee1a47.rmeta: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs
+
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs:

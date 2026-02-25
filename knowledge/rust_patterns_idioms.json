@@ -1,0 +1,151 @@
+{
+  "title": "Rust Patterns and Idioms",
+  "version": "1.0.0",
+  "description": "Common patterns and best practices in Rust",
+  "categories": [
+    {
+      "name": "Error Handling Patterns",
+      "patterns": [
+        {
+          "name": "? Operator Chain",
+          "description": "Chain multiple fallible operations",
+          "example": "fn process_file(path: &str) -> Result<String, Error> {\n    let content = fs::read_to_string(path)?\n        .lines()\n        .filter(|line| !line.is_empty())\n        .collect::<Vec<_>>()\n        .join(\"\\n\");\n    Ok(content)\n}"
+        },
+        {
+          "name": "Custom Error Types",
+          "description": "Define domain-specific errors",
+          "example": "use thiserror::Error;\n\n#[derive(Error, Debug)]\npub enum AppError {\n    #[error(\"IO error: {0}\")]\n    Io(#[from] std::io::Error),\n    \n    #[error(\"Invalid config: {0}\")]\n    InvalidConfig(String),\n    \n    #[error(\"Not found: {0}\")]\n    NotFound(String),\n}"
+        },
+        {
+          "name": "Result Extension Methods",
+          "description": "Add context to errors",
+          "example": "use anyhow::{Context, Result};\n\nfn load_config() -> Result<Config> {\n    let path = \"config.toml\";\n    let content = fs::read_to_string(path)\n        .with_context(|| format!(\"Failed to read {}\", path))?;\n    \n    toml::from_str(&content)\n        .context(\"Failed to parse config\")\n}"
+        }
+      ]
+    },
+    {
+      "name": "Builder Pattern",
+      "description": "Construct complex objects step by step",
+      "patterns": [
+        {
+          "name": "Consuming Builder",
+          "example": "pub struct Server {\n    host: String,\n    port: u16,\n    timeout: Duration,\n}\n\npub struct ServerBuilder {\n    host: String,\n    port: u16,\n    timeout: Option<Duration>,\n}\n\nimpl ServerBuilder {\n    pub fn new(host: impl Into<String>) -> Self {\n        Self {\n            host: host.into(),\n            port: 8080,\n            timeout: None,\n        }\n    }\n    \n    pub fn port(mut self, port: u16) -> Self {\n        self.port = port;\n        self\n    }\n    \n    pub fn timeout(mut self, timeout: Duration) -> Self {\n        self.timeout = Some(timeout);\n        self\n    }\n    \n    pub fn build(self) -> Server {\n        Server {\n            host: self.host,\n            port: self.port,\n            timeout: self.timeout.unwrap_or(Duration::from_secs(30)),\n        }\n    }\n}\n\n// Usage\nlet server = ServerBuilder::new(\"localhost\")\n    .port(3000)\n    .timeout(Duration::from_secs(60))\n    .build();"
+        }
+      ]
+    },
+    {
+      "name": "Newtype Pattern",
+      "description": "Wrapper type for type safety",
+      "patterns": [
+        {
+          "name": "Strong Typing",
+          "example": "pub struct UserId(u64);\npub struct OrderId(u64);\n\nimpl UserId {\n    pub fn new(id: u64) -> Self {\n        UserId(id)\n    }\n    \n    pub fn value(&self) -> u64 {\n        self.0\n    }\n}\n\n// Can't accidentally mix user IDs with order IDs\nfn get_user(id: UserId) -> User { /* ... */ }\nfn get_order(id: OrderId) -> Order { /* ... */ }"
+        },
+        {
+          "name": "Deref for Transparent Access",
+          "example": "use std::ops::Deref;\n\npub struct Email(String);\n\nimpl Deref for Email {\n    type Target = str;\n    \n    fn deref(&self) -> &Self::Target {\n        &self.0\n    }\n}\n\n// Can use Email like a &str\nlet email = Email(\"user@example.com\".to_string());\nprintln!(\"Length: {}\", email.len());"
+        }
+      ]
+    },
+    {
+      "name": "Type State Pattern",
+      "description": "Encode state in the type system",
+      "patterns": [
+        {
+          "name": "State Machine Types",
+          "example": "struct Locked;\nstruct Unlocked;\n\nstruct Door<State> {\n    state: PhantomData<State>,\n}\n\nimpl Door<Locked> {\n    pub fn new() -> Self {\n        Door { state: PhantomData }\n    }\n    \n    pub fn unlock(self) -> Door<Unlocked> {\n        Door { state: PhantomData }\n    }\n}\n\nimpl Door<Unlocked> {\n    pub fn lock(self) -> Door<Locked> {\n        Door { state: PhantomData }\n    }\n    \n    pub fn open(&self) {\n        println!(\"Door opened\");\n    }\n}\n\n// Usage\nlet door = Door::new(); // Door<Locked>\nlet door = door.unlock(); // Door<Unlocked>\ndoor.open(); // OK\n// door.open(); // Would fail - door moved"
+        }
+      ]
+    },
+    {
+      "name": "RAII Pattern",
+      "description": "Resource Acquisition Is Initialization",
+      "patterns": [
+        {
+          "name": "Guard Pattern",
+          "example": "pub struct FileGuard {\n    file: File,\n}\n\nimpl FileGuard {\n    pub fn new(path: &Path) -> io::Result<Self> {\n        Ok(FileGuard {\n            file: File::create(path)?,\n        })\n    }\n}\n\nimpl Drop for FileGuard {\n    fn drop(&mut self) {\n        // Cleanup happens automatically\n        self.file.sync_all().ok();\n    }\n}\n\n// File automatically synced and closed when guard dropped"
+        },
+        {
+          "name": "Scope Guard",
+          "example": "struct Guard<F: FnOnce()> {\n    cleanup: Option<F>,\n}\n\nimpl<F: FnOnce()> Guard<F> {\n    fn new(cleanup: F) -> Self {\n        Guard { cleanup: Some(cleanup) }\n    }\n}\n\nimpl<F: FnOnce()> Drop for Guard<F> {\n    fn drop(&mut self) {\n        if let Some(cleanup) = self.cleanup.take() {\n            cleanup();\n        }\n    }\n}\n\n// Usage\nlet _guard = Guard::new(|| println!(\"Cleanup!\"));\n// Cleanup runs when _guard goes out of scope"
+        }
+      ]
+    },
+    {
+      "name": "Extension Traits",
+      "description": "Add methods to existing types",
+      "patterns": [
+        {
+          "name": "Convenience Methods",
+          "example": "trait StringExt {\n    fn truncate_to(&self, max_len: usize) -> String;\n}\n\nimpl StringExt for str {\n    fn truncate_to(&self, max_len: usize) -> String {\n        if self.len() <= max_len {\n            self.to_string()\n        } else {\n            format!(\"{}...\", &self[..max_len])\n        }\n    }\n}\n\n// Usage\nlet text = \"Hello, world!\";\nlet short = text.truncate_to(5); // \"Hello...\""
+        }
+      ]
+    },
+    {
+      "name": "Option/Result Combinators",
+      "description": "Functional-style chaining",
+      "patterns": [
+        {
+          "name": "map and and_then",
+          "example": "// Option chaining\nlet result = Some(\"42\")\n    .map(|s| s.parse::<i32>())\n    .and_then(|r| r.ok())\n    .map(|n| n * 2);\n\n// Result chaining\nfn process(input: &str) -> Result<i32, Error> {\n    input.parse::<i32>()\n        .map_err(|e| Error::ParseError(e))\n        .and_then(|n| {\n            if n > 0 {\n                Ok(n * 2)\n            } else {\n                Err(Error::InvalidValue)\n            }\n        })\n}"
+        },
+        {
+          "name": "ok_or and ok_or_else",
+          "example": "fn find_user(id: u64) -> Result<User, Error> {\n    database\n        .find(id)\n        .ok_or_else(|| Error::UserNotFound(id))\n}"
+        }
+      ]
+    },
+    {
+      "name": "Interior Mutability",
+      "description": "Mutate through shared references",
+      "patterns": [
+        {
+          "name": "RefCell for Single-threaded",
+          "example": "use std::cell::RefCell;\n\nstruct Service {\n    cache: RefCell<HashMap<String, String>>,\n}\n\nimpl Service {\n    pub fn get(&self, key: &str) -> Option<String> {\n        // Can mutate cache even with &self\n        if let Some(value) = self.cache.borrow().get(key) {\n            return Some(value.clone());\n        }\n        \n        let value = self.fetch_from_db(key)?;\n        self.cache.borrow_mut().insert(key.to_string(), value.clone());\n        Some(value)\n    }\n}"
+        },
+        {
+          "name": "Mutex for Multi-threaded",
+          "example": "use std::sync::Mutex;\n\nstruct Service {\n    cache: Mutex<HashMap<String, String>>,\n}\n\nimpl Service {\n    pub fn get(&self, key: &str) -> Option<String> {\n        let mut cache = self.cache.lock().unwrap();\n        if let Some(value) = cache.get(key) {\n            return Some(value.clone());\n        }\n        \n        let value = self.fetch_from_db(key)?;\n        cache.insert(key.to_string(), value.clone());\n        Some(value)\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Entry API Pattern",
+      "description": "Efficient HashMap operations",
+      "example": "use std::collections::HashMap;\n\nlet mut map = HashMap::new();\n\n// Count word frequency\nfor word in words {\n    *map.entry(word).or_insert(0) += 1;\n}\n\n// Insert if absent\nmap.entry(\"key\").or_insert_with(|| expensive_computation());\n\n// Update or insert\nmap.entry(\"key\")\n    .and_modify(|v| *v += 1)\n    .or_insert(1);"
+    },
+    {
+      "name": "Cow (Clone on Write)",
+      "description": "Avoid unnecessary clones",
+      "patterns": [
+        {
+          "name": "Conditional Cloning",
+          "example": "use std::borrow::Cow;\n\nfn process(input: &str) -> Cow<str> {\n    if input.contains(\"special\") {\n        // Need to modify - return owned\n        Cow::Owned(input.replace(\"special\", \"normal\"))\n    } else {\n        // No modification - return borrowed\n        Cow::Borrowed(input)\n    }\n}\n\n// Caller gets either &str or String, uses as &str"
+        }
+      ]
+    },
+    {
+      "name": "Sealed Trait Pattern",
+      "description": "Prevent external trait implementation",
+      "example": "mod sealed {\n    pub trait Sealed {}\n}\n\npub trait MyTrait: sealed::Sealed {\n    fn method(&self);\n}\n\nimpl sealed::Sealed for MyType {}\nimpl MyTrait for MyType {\n    fn method(&self) { /* ... */ }\n}\n\n// External crates can't implement MyTrait"
+    },
+    {
+      "name": "Constructor Pattern",
+      "description": "Safe object initialization",
+      "patterns": [
+        {
+          "name": "new() for infallible",
+          "example": "pub struct Config {\n    value: String,\n}\n\nimpl Config {\n    pub fn new(value: String) -> Self {\n        Config { value }\n    }\n}"
+        },
+        {
+          "name": "try_new() for fallible",
+          "example": "pub struct Port {\n    value: u16,\n}\n\nimpl Port {\n    pub fn try_new(value: u16) -> Result<Self, Error> {\n        if value == 0 {\n            return Err(Error::InvalidPort);\n        }\n        Ok(Port { value })\n    }\n}"
+        },
+        {
+          "name": "default() for defaults",
+          "example": "impl Default for Config {\n    fn default() -> Self {\n        Config {\n            value: String::from(\"default\"),\n        }\n    }\n}\n\nlet config = Config::default();"
+        }
+      ]
+    }
+  ]
+}

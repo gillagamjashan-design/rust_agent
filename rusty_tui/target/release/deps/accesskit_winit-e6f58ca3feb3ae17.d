@@ -1,0 +1,9 @@
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/accesskit_winit-e6f58ca3feb3ae17.d: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/mod.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/unix.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libaccesskit_winit-e6f58ca3feb3ae17.rlib: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/mod.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/unix.rs
+
+/workspace/jashan/rust_agent/rusty_tui/target/release/deps/libaccesskit_winit-e6f58ca3feb3ae17.rmeta: /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/lib.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/mod.rs /workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/unix.rs
+
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/lib.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/mod.rs:
+/workspace/jashan/rust_agent/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/accesskit_winit-0.22.4/src/platform_impl/unix.rs:
