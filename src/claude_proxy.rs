@@ -1,6 +1,9 @@
 use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::tools::{Tool, ToolExecutor, ToolResult};
 
 // CLIProxyAPI client for Claude Max subscription
 pub struct ClaudeProxy {
@@ -15,12 +18,26 @@ pub struct ProxyRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
     pub messages: Vec<Message>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<Tool>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub role: String,
-    pub content: String,
+    #[serde(flatten)]
+    pub content: MessageContent,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MessageContent {
+    Text {
+        content: String,
+    },
+    Blocks {
+        content: Vec<ContentBlock>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -28,9 +45,23 @@ pub struct ProxyResponse {
     pub content: Vec<ContentBlock>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct ContentBlock {
-    pub text: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ContentBlock {
+    Text {
+        text: String,
+    },
+    ToolUse {
+        id: String,
+        name: String,
+        input: Value,
+    },
+    ToolResult {
+        tool_use_id: String,
+        content: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        is_error: Option<bool>,
+    },
 }
 
 impl ClaudeProxy {
@@ -293,8 +324,11 @@ Remember: Your goal is to make the student a Rust ownership EXPERT through:
             system,
             messages: vec![Message {
                 role: "user".to_string(),
-                content: prompt,
+                content: MessageContent::Text {
+                    content: prompt,
+                },
             }],
+            tools: None,
         };
 
         let response = self
@@ -314,12 +348,124 @@ Remember: Your goal is to make the student a Rust ownership EXPERT through:
         Ok(proxy_response
             .content
             .first()
-            .map(|c| c.text.clone())
+            .and_then(|c| match c {
+                ContentBlock::Text { text } => Some(text.clone()),
+                _ => None,
+            })
             .unwrap_or_default())
     }
 
     /// Simple query method for general use (alias for send_request with no system prompt)
     pub async fn query(&self, prompt: &str) -> Result<String> {
         self.send_request(prompt.to_string(), None).await
+    }
+
+    /// Run a query with tool use support - implements the tool use loop
+    pub async fn run_with_tools(
+        &self,
+        prompt: String,
+        system: Option<String>,
+        tools: Vec<Tool>,
+        executor: &ToolExecutor,
+        progress_callback: Option<&dyn Fn(String)>,
+    ) -> Result<String> {
+        let mut messages = vec![Message {
+            role: "user".to_string(),
+            content: MessageContent::Text {
+                content: prompt,
+            },
+        }];
+
+        // Tool use loop - continues until Claude returns text without tool uses
+        loop {
+            let request = ProxyRequest {
+                model: "claude-sonnet-4-5-20250929".to_string(),
+                max_tokens: 4096,
+                system: system.clone(),
+                messages: messages.clone(),
+                tools: Some(tools.clone()),
+            };
+
+            let response = self
+                .client
+                .post(format!("{}/v1/messages", self.base_url))
+                .header("Authorization", "Bearer rust-agent-key-123")
+                .json(&request)
+                .send()
+                .await?;
+
+            if !response.status().is_success() {
+                return Err(anyhow::anyhow!("CLIProxyAPI not running on localhost:8317"));
+            }
+
+            let proxy_response: ProxyResponse = response.json().await?;
+
+            // Collect tool uses and text from response
+            let mut tool_uses = Vec::new();
+            let mut final_text = String::new();
+
+            for block in &proxy_response.content {
+                match block {
+                    ContentBlock::Text { text } => {
+                        if !final_text.is_empty() {
+                            final_text.push('\n');
+                        }
+                        final_text.push_str(text);
+                    }
+                    ContentBlock::ToolUse { id, name, input } => {
+                        tool_uses.push((id.clone(), name.clone(), input.clone()));
+                    }
+                    ContentBlock::ToolResult { .. } => {
+                        // Ignore tool results in the response
+                    }
+                }
+            }
+
+            // If no tool uses, we're done - return the final text
+            if tool_uses.is_empty() {
+                return Ok(final_text);
+            }
+
+            // Add assistant message with tool uses
+            messages.push(Message {
+                role: "assistant".to_string(),
+                content: MessageContent::Blocks {
+                    content: proxy_response.content.clone(),
+                },
+            });
+
+            // Execute each tool and collect results
+            let mut tool_result_blocks = Vec::new();
+            for (id, name, input) in tool_uses {
+                // Notify progress
+                if let Some(callback) = &progress_callback {
+                    callback(format!("🔧 Running tool: {}...", name));
+                }
+
+                // Execute the tool
+                let result_block = match executor.execute(&name, &input).await {
+                    Ok(output) => ContentBlock::ToolResult {
+                        tool_use_id: id.clone(),
+                        content: output,
+                        is_error: None,
+                    },
+                    Err(e) => ContentBlock::ToolResult {
+                        tool_use_id: id.clone(),
+                        content: format!("Error: {}", e),
+                        is_error: Some(true),
+                    },
+                };
+
+                tool_result_blocks.push(result_block);
+            }
+
+            // Add tool results as user message
+            messages.push(Message {
+                role: "user".to_string(),
+                content: MessageContent::Blocks {
+                    content: tool_result_blocks,
+                },
+            });
+        }
     }
 }

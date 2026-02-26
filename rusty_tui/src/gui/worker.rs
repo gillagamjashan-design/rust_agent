@@ -5,18 +5,19 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread::JoinHandle;
 
 use rust_agent::knowledge::{KnowledgeDatabase, KnowledgeQuery};
-use rust_agent::tools::KnowledgeFetcher;
+use rust_agent::tools::{KnowledgeFetcher, ToolExecutor, get_tools};
 use rust_agent::claude_proxy::ClaudeProxy;
 
 pub fn spawn_worker(
     command_rx: Receiver<UserCommand>,
     message_tx: Sender<WorkerMessage>,
     db_path: PathBuf,
+    launch_dir: PathBuf,
 ) -> JoinHandle<()> {
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            if let Err(e) = worker_loop(command_rx, message_tx, db_path).await {
+            if let Err(e) = worker_loop(command_rx, message_tx, db_path, launch_dir).await {
                 eprintln!("Worker error: {}", e);
             }
         })
@@ -27,12 +28,16 @@ async fn worker_loop(
     command_rx: Receiver<UserCommand>,
     message_tx: Sender<WorkerMessage>,
     db_path: PathBuf,
+    launch_dir: PathBuf,
 ) -> Result<()> {
     // Initialize knowledge database
     let db = KnowledgeDatabase::new(&db_path)?;
     let query = KnowledgeQuery::new(db.clone());
     let knowledge_fetcher = KnowledgeFetcher::new(query);
     let claude = ClaudeProxy::new();
+
+    // Initialize autonomous tool executor
+    let tool_executor = ToolExecutor::new(launch_dir.clone());
 
     // Send initial stats
     let concept_count = db.count_concepts().unwrap_or(0);
@@ -52,10 +57,44 @@ async fn worker_loop(
                     _ => String::new(),
                 };
 
+                // Enhanced system prompt for autonomous agent
+                let system_prompt = format!(
+                    "You are Rusty, a Rust programming assistant with autonomous capabilities.\n\n\
+                    You have access to these tools:\n\
+                    - write_file: Create or overwrite files in the project\n\
+                    - read_file: Read file contents\n\
+                    - run_command: Execute bash commands (cargo, rustc, tests, etc.)\n\
+                    - list_files: List directory contents\n\n\
+                    When the user asks you to create, modify, or run code:\n\
+                    1. Use list_files to understand the project structure\n\
+                    2. Use read_file to examine existing code\n\
+                    3. Use write_file to create/modify files\n\
+                    4. Use run_command to compile and run code\n\n\
+                    Always explain what you're doing before using tools.\n\
+                    All file paths are relative to the project directory: {}\n\
+                    Be proactive and complete tasks fully.",
+                    launch_dir.display()
+                );
+
                 let prompt = format!("{}User: {}", context, text);
 
-                // Query Claude (async)
-                match claude.query(&prompt).await {
+                // Get available tools
+                let tools = get_tools();
+
+                // Create progress callback
+                let message_tx_clone = message_tx.clone();
+                let progress_callback = |msg: String| {
+                    message_tx_clone.send(WorkerMessage::ToolProgress(msg)).ok();
+                };
+
+                // Query Claude with tools (async)
+                match claude.run_with_tools(
+                    prompt,
+                    Some(system_prompt),
+                    tools,
+                    &tool_executor,
+                    Some(&progress_callback),
+                ).await {
                     Ok(response) => {
                         message_tx.send(WorkerMessage::Response(response)).ok();
                     }
@@ -118,6 +157,18 @@ fn help_text() -> String {
 Keyboard Shortcuts:
 Enter              - Send message
 Ctrl+C             - Quit application
+
+Autonomous Capabilities:
+I can now autonomously:
+✓ Write and read files in your project
+✓ Run terminal commands (cargo, rustc, tests, etc.)
+✓ Complete full programming tasks independently
+
+Example prompts:
+- "Create a hello world program and run it"
+- "Write a function to calculate fibonacci numbers"
+- "Run cargo build and show me the errors"
+- "Create a new Rust project structure"
 
 Tips:
 - Just type your question to get help with Rust
