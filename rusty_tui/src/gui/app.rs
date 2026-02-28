@@ -30,13 +30,30 @@ impl RustyApp {
             .join("data")
             .join("knowledge.db");
 
+        eprintln!("🚀 Rusty GUI starting...");
+        eprintln!("📂 Database path: {:?}", db_path);
+
         // Spawn worker thread
         worker::spawn_worker(command_rx, message_tx, db_path);
+
+        eprintln!("✅ Worker thread spawned");
+        eprintln!("🎨 Initializing GUI...");
 
         // Create welcome message
         let welcome = Message::new(
             Role::System,
-            "Welcome to Rusty! 🦀\n\nI'm your Rust learning agent. Ask me anything about Rust programming!\n\nType /help to see available commands.".to_string(),
+            "🦀 Welcome to Rusty - Your Rust Learning Agent!\n\n\
+             I'm here to help you learn Rust programming. I have instant access to:\n\
+             • Rust core concepts (ownership, lifetimes, traits)\n\
+             • Design patterns and idioms\n\
+             • Cargo commands and toolchain usage\n\
+             • Async/concurrency examples\n\n\
+             💬 Ask me anything! For example:\n\
+             • \"What is ownership?\"\n\
+             • \"How do I use cargo test?\"\n\
+             • \"Show me the builder pattern\"\n\n\
+             📋 Type /help to see available commands\n\
+             🔍 Type /search <topic> to search the knowledge base".to_string(),
         );
 
         Self {

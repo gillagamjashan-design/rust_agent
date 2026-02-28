@@ -15,16 +15,22 @@ fn main() -> Result<(), eframe::Error> {
         .join("data")
         .join("knowledge.db");
 
+    eprintln!("🦀 Rusty - Rust Learning Agent v12.0.0");
+    eprintln!("=====================================");
+
     if !db_path.exists() {
-        println!("🦀 Rusty - Rust Learning Agent");
-        println!();
-        println!("📚 First run detected - loading knowledge database...");
-        println!("   This will take about 1-2 seconds.");
-        println!();
+        eprintln!("📚 First run detected - loading knowledge database...");
+        eprintln!("   This will take about 1-2 seconds.");
+        eprintln!();
 
         // Ensure data directory exists
         std::fs::create_dir_all(db_path.parent().unwrap()).ok();
+    } else {
+        eprintln!("✅ Knowledge database found");
     }
+
+    eprintln!("🚀 Starting GUI...");
+    eprintln!();
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

@@ -44,33 +44,60 @@ async fn worker_loop(
     loop {
         match command_rx.recv() {
             Ok(UserCommand::Query(text)) => {
+                eprintln!("📨 Received query: {}", text.chars().take(50).collect::<String>());
+
                 // Search knowledge database
                 let context = match knowledge_fetcher.search(&text) {
                     Ok(knowledge) if knowledge.has_results() => {
+                        eprintln!("📚 Found {} knowledge results",
+                                 knowledge.results.concepts.len() +
+                                 knowledge.results.patterns.len() +
+                                 knowledge.results.commands.len());
                         format!("Knowledge Context:\n{}\n\n", knowledge.formatted)
                     }
-                    _ => String::new(),
+                    _ => {
+                        eprintln!("ℹ️  No knowledge results, using Claude only");
+                        String::new()
+                    }
                 };
 
                 let prompt = format!("{}User: {}", context, text);
 
                 // Query Claude (async)
+                eprintln!("🤖 Querying Claude API...");
                 match claude.query(&prompt).await {
                     Ok(response) => {
+                        eprintln!("✅ Got response ({} chars)", response.len());
                         message_tx.send(WorkerMessage::Response(response)).ok();
                     }
                     Err(e) => {
-                        message_tx.send(WorkerMessage::Error(format!("API Error: {}", e))).ok();
+                        eprintln!("❌ Claude API error: {}", e);
+                        let error_msg = format!(
+                            "Sorry, I couldn't connect to the AI service.\n\n\
+                             Error: {}\n\n\
+                             💡 Make sure ClaudeProxyAPI is running:\n\
+                             • Check: curl http://localhost:8317/\n\
+                             • Start: ./start_cliproxyapi.sh\n\n\
+                             🔍 You can still search the knowledge base with /search <query>",
+                            e
+                        );
+                        message_tx.send(WorkerMessage::Error(error_msg)).ok();
                     }
                 }
             }
             Ok(UserCommand::Command(cmd)) => {
-                // Handle slash commands
+                eprintln!("⚙️  Executing command: {}", cmd);
                 let result = execute_command(&cmd, &knowledge_fetcher, &db);
                 message_tx.send(WorkerMessage::Response(result)).ok();
             }
-            Ok(UserCommand::Quit) => break,
-            Err(_) => break,
+            Ok(UserCommand::Quit) => {
+                eprintln!("👋 Quit command received");
+                break;
+            }
+            Err(_) => {
+                eprintln!("⚠️  Channel closed, worker exiting");
+                break;
+            }
         }
     }
 

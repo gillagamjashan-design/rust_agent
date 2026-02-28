@@ -6,15 +6,23 @@ use egui::{RichText, ScrollArea};
 pub fn render_ui(ctx: &egui::Context, app: &mut RustyApp) {
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical(|ui| {
-            // Header
+            // Header (fixed height ~40px)
             render_header(ui, app);
             ui.separator();
 
-            // Chat area (expanding)
-            render_chat_area(ui, app);
+            // Chat area - allocate all remaining space
+            let available_height = ui.available_height() - 50.0; // Reserve 50px for input + separator
+            ui.allocate_ui_with_layout(
+                egui::vec2(ui.available_width(), available_height),
+                egui::Layout::top_down(egui::Align::LEFT),
+                |ui| {
+                    render_chat_area(ui, app);
+                }
+            );
+
             ui.separator();
 
-            // Input area
+            // Input area (fixed height ~40px)
             render_input_area(ui, app);
         });
     });
@@ -37,8 +45,13 @@ fn render_header(ui: &mut egui::Ui, app: &RustyApp) {
 fn render_chat_area(ui: &mut egui::Ui, app: &mut RustyApp) {
     ScrollArea::vertical()
         .auto_shrink([false, false])
+        .min_scrolled_height(200.0)  // CRITICAL FIX: Minimum 200px height
+        .max_height(ui.available_height())  // Use all available height
         .stick_to_bottom(app.scroll_to_bottom)
         .show(ui, |ui| {
+            // Add padding
+            ui.add_space(10.0);
+
             for message in &app.messages {
                 render_message(ui, message);
             }
@@ -49,6 +62,9 @@ fn render_chat_area(ui: &mut egui::Ui, app: &mut RustyApp) {
                     ui.label(RichText::new("Agent is thinking...").color(theme::YELLOW));
                 });
             }
+
+            // Bottom padding
+            ui.add_space(10.0);
         });
 
     // Reset scroll flag after rendering
@@ -107,7 +123,7 @@ fn render_message(ui: &mut egui::Ui, message: &Message) {
         }
     }
 
-    ui.add_space(10.0);
+    ui.add_space(15.0);  // ADD SPACE BETWEEN MESSAGES
 }
 
 fn render_input_area(ui: &mut egui::Ui, app: &mut RustyApp) {
