@@ -1,6 +1,7 @@
 use super::messages::{Message, Role, UserCommand, WorkerMessage};
 use super::theme;
 use super::worker;
+use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::Duration;
 
@@ -11,6 +12,11 @@ pub struct RustyApp {
     pub knowledge_stats: String,
     pub scroll_to_bottom: bool,
     pub first_render: bool,
+
+    // Animation state
+    pub message_animations: HashMap<usize, f32>, // index -> progress (0.0 to 1.0)
+    pub last_message_count: usize,
+    pub spinner_rotation: f32,
 
     // Channels for async communication
     message_rx: Receiver<WorkerMessage>,
@@ -63,6 +69,9 @@ impl RustyApp {
             knowledge_stats: String::new(),
             scroll_to_bottom: false,
             first_render: true,
+            message_animations: HashMap::new(),
+            last_message_count: 1, // Welcome message
+            spinner_rotation: 0.0,
             message_rx,
             command_tx,
         }
@@ -126,6 +135,10 @@ impl RustyApp {
             }
         }
     }
+
+    pub fn get_message_alpha(&self, index: usize) -> f32 {
+        self.message_animations.get(&index).copied().unwrap_or(1.0)
+    }
 }
 
 impl eframe::App for RustyApp {
@@ -135,13 +148,50 @@ impl eframe::App for RustyApp {
             self.handle_worker_message(msg);
         }
 
+        // Detect new messages and initialize animations
+        let current_count = self.messages.len();
+        if current_count > self.last_message_count {
+            // New messages added - initialize fade-in animations
+            for i in self.last_message_count..current_count {
+                self.message_animations.insert(i, 0.0);
+            }
+            self.last_message_count = current_count;
+        }
+
+        // Update animation progress
+        let mut completed = Vec::new();
+        for (index, progress) in self.message_animations.iter_mut() {
+            *progress += 0.05; // ~300ms fade (20 frames @ 60fps)
+            if *progress >= 1.0 {
+                *progress = 1.0;
+                completed.push(*index);
+            }
+        }
+
+        // Clean up completed animations
+        for index in completed {
+            self.message_animations.remove(&index);
+        }
+
+        // Animate spinner
+        self.spinner_rotation += 0.1;
+        if self.spinner_rotation > 360.0 {
+            self.spinner_rotation = 0.0;
+        }
+
         // Apply theme
         theme::apply_theme(ctx);
 
         // Render UI
         super::layout::render_ui(ctx, self);
 
-        // Request repaint for smooth animations
-        ctx.request_repaint_after(Duration::from_millis(100));
+        // Dynamic refresh rate
+        let has_animations = !self.message_animations.is_empty() || self.waiting_for_response;
+        let refresh_ms = if has_animations {
+            10 // 100 FPS during animations
+        } else {
+            16 // 60 FPS when idle
+        };
+        ctx.request_repaint_after(Duration::from_millis(refresh_ms));
     }
 }
