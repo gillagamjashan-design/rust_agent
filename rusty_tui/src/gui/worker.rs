@@ -1,4 +1,4 @@
-use super::messages::{UserCommand, WorkerMessage};
+use super::messages::{FileCreationInfo, UserCommand, WorkerMessage};
 use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
@@ -7,6 +7,7 @@ use std::thread::JoinHandle;
 use rust_agent::knowledge::{KnowledgeDatabase, KnowledgeQuery};
 use rust_agent::tools::KnowledgeFetcher;
 use rust_agent::claude_proxy::ClaudeProxy;
+use rust_agent::file_generator::{AutoFileCreator, FileCreationResult, FileCreationDetector};
 
 pub fn spawn_worker(
     command_rx: Receiver<UserCommand>,
@@ -34,6 +35,11 @@ async fn worker_loop(
     let knowledge_fetcher = KnowledgeFetcher::new(query);
     let claude = ClaudeProxy::new();
 
+    // Initialize auto file creator and detector
+    let workspace_root = std::env::current_dir().unwrap_or_default();
+    let auto_file_creator = AutoFileCreator::new(workspace_root, db.clone());
+    let file_detector = FileCreationDetector::new();
+
     // Send initial stats
     let concept_count = db.count_concepts().unwrap_or(0);
     let pattern_count = db.count_patterns().unwrap_or(0);
@@ -46,8 +52,14 @@ async fn worker_loop(
             Ok(UserCommand::Query(text)) => {
                 eprintln!("📨 Received query: {}", text.chars().take(50).collect::<String>());
 
-                // Search knowledge database
-                let context = match knowledge_fetcher.search(&text) {
+                // STEP 1: Detect if this is a code generation request
+                let is_code_generation = file_detector.should_create_files(&text);
+                if is_code_generation {
+                    eprintln!("🔍 Detected code generation request");
+                }
+
+                // STEP 2: Search knowledge database for concepts/patterns
+                let mut context = match knowledge_fetcher.search(&text) {
                     Ok(knowledge) if knowledge.has_results() => {
                         eprintln!("📚 Found {} knowledge results",
                                  knowledge.results.concepts.len() +
@@ -61,6 +73,19 @@ async fn worker_loop(
                     }
                 };
 
+                // STEP 3: If code generation, add file template information
+                if is_code_generation {
+                    let file_templates = get_relevant_file_templates(&db, &text);
+                    if !file_templates.is_empty() {
+                        eprintln!("📁 Found {} file templates to suggest", file_templates.len());
+                        context.push_str("\n\n📁 File Creation Guide:\n");
+                        context.push_str("The working directory needs these files created:\n\n");
+                        context.push_str(&file_templates);
+                        context.push_str("\nIMPORTANT: When providing code, use @filepath markers like this:\n");
+                        context.push_str("@src/main.rs\n```rust\ncode here\n```\n\n");
+                    }
+                }
+
                 let prompt = format!("{}User: {}", context, text);
 
                 // Query Claude (async)
@@ -68,7 +93,32 @@ async fn worker_loop(
                 match claude.query(&prompt).await {
                     Ok(response) => {
                         eprintln!("✅ Got response ({} chars)", response.len());
-                        message_tx.send(WorkerMessage::Response(response)).ok();
+
+                        // Try to auto-create files from the response
+                        let file_results = auto_file_creator.auto_create_from_response(&text, &response)
+                            .unwrap_or_else(|e| {
+                                eprintln!("⚠️  File creation error: {}", e);
+                                vec![]
+                            });
+
+                        if !file_results.is_empty() {
+                            eprintln!("📁 Created {} file(s)", file_results.len());
+
+                            // Append file creation summary to response
+                            let summary = format_file_creation_summary(&file_results);
+                            let full_response = format!("{}\n\n{}", response, summary);
+                            message_tx.send(WorkerMessage::Response(full_response)).ok();
+
+                            // Also send structured notification
+                            let infos: Vec<FileCreationInfo> = file_results.iter().map(|r| FileCreationInfo {
+                                path: r.path.display().to_string(),
+                                appended: r.appended,
+                                success: r.success(),
+                            }).collect();
+                            message_tx.send(WorkerMessage::FilesCreated(infos)).ok();
+                        } else {
+                            message_tx.send(WorkerMessage::Response(response)).ok();
+                        }
                     }
                     Err(e) => {
                         eprintln!("❌ Claude API error: {}", e);
@@ -130,6 +180,50 @@ fn execute_command(cmd: &str, knowledge_fetcher: &KnowledgeFetcher, db: &Knowled
         "/quit" | "/exit" | "/q" => "Goodbye! 👋".to_string(),
         _ => format!("Unknown command: {}. Type /help for available commands.", command),
     }
+}
+
+fn get_relevant_file_templates(db: &KnowledgeDatabase, query: &str) -> String {
+    let mut templates = String::new();
+
+    // Determine what type of project from query
+    let query_lower = query.to_lowercase();
+
+    if query_lower.contains("hello world") || query_lower.contains("main") {
+        templates.push_str("• src/main.rs - Main program entry point with fn main()\n");
+        templates.push_str("• Cargo.toml - Project manifest with [package] section\n");
+    } else if query_lower.contains("library") || query_lower.contains("lib") {
+        templates.push_str("• src/lib.rs - Library root with pub modules\n");
+        templates.push_str("• Cargo.toml - Library manifest\n");
+    } else if query_lower.contains("struct") || query_lower.contains("type") {
+        templates.push_str("• src/<name>.rs - Module file with struct/enum definitions\n");
+    } else if query_lower.contains("test") {
+        templates.push_str("• tests/integration_test.rs - Integration tests with #[test]\n");
+    } else if query_lower.contains("server") || query_lower.contains("web") {
+        templates.push_str("• src/main.rs - Server entry point\n");
+        templates.push_str("• src/routes.rs - Route handlers\n");
+        templates.push_str("• Cargo.toml - Dependencies (tokio, axum, etc.)\n");
+    } else {
+        // Default for any code generation request
+        templates.push_str("• src/main.rs - Main program file\n");
+    }
+
+    templates
+}
+
+fn format_file_creation_summary(results: &[FileCreationResult]) -> String {
+    let mut summary = String::from("\n📁 **Files Created:**\n");
+    for result in results {
+        if result.success() {
+            let action = if result.appended { "Updated" } else { "Created" };
+            summary.push_str(&format!("  ✅ {} `{}`\n", action, result.path.display()));
+        } else {
+            summary.push_str(&format!("  ❌ Failed: `{}` - {}\n",
+                result.path.display(),
+                result.error.as_deref().unwrap_or("Unknown error")
+            ));
+        }
+    }
+    summary
 }
 
 fn help_text() -> String {

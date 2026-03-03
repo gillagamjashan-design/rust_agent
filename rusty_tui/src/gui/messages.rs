@@ -13,6 +13,14 @@ pub enum WorkerMessage {
     SystemMessage(String),
     Error(String),
     Stats(String),
+    FilesCreated(Vec<FileCreationInfo>),
+}
+
+#[derive(Debug, Clone)]
+pub struct FileCreationInfo {
+    pub path: String,
+    pub appended: bool,
+    pub success: bool,
 }
 
 #[derive(Debug, Clone)]

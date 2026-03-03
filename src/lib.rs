@@ -11,3 +11,6 @@ pub mod cache;
 // Knowledge database system
 pub mod knowledge;      // SQLite with FTS5 full-text search
 pub mod tools;          // Runtime tools for agent (KnowledgeFetcher)
+
+// File generation
+pub mod file_generator; // Automatic file creation from code responses

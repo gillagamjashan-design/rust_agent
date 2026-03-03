@@ -146,15 +146,20 @@ fi
 # 8. Summary
 echo
 echo "============================================="
-echo "🎉 Installation Complete!"
+echo "🎉 Build & Installation Complete!"
 echo "============================================="
 echo
-print_success "Rusty agent is installed to: $INSTALL_DIR/rusty"
-print_success "Knowledge database location: $HOME/.agent/data/"
+print_success "Rusty binary built: rusty_tui/target/release/rusty"
+print_success "Installed to: $INSTALL_DIR/rusty"
+print_success "Knowledge database: $HOME/.agent/data/"
+print_success "ClaudeProxyAPI: Running on localhost:8317"
 echo
-echo "To start using Rusty:"
-echo "  1. Make sure ClaudeProxyAPI is running (localhost:8317)"
-echo "  2. Run: rusty"
+print_info "Rusty is built and installed but NOT running"
+echo
+echo "To start Rusty manually:"
+echo "  1. Ensure ClaudeProxyAPI is running (localhost:8317)"
+echo "  2. cd to your project directory"
+echo "  3. Run: rusty"
 echo
 echo "Commands in Rusty:"
 echo "  /help      - Show available commands"
@@ -166,15 +171,5 @@ print_info "If 'rusty' command not found, add ~/.local/bin to PATH:"
 echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
 echo
 
-# Check if user wants to run rusty now
-read -p "Do you want to run 'rusty' now? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
-        exec rusty
-    else
-        exec "$INSTALL_DIR/rusty"
-    fi
-fi
-
-print_success "Setup complete! Run 'rusty' to start."
+print_success "Setup complete! Rusty is ready but NOT running."
+print_info "To start Rusty manually, run: rusty"
