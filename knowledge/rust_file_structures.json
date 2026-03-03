@@ -1,0 +1,90 @@
+{
+  "title": "Rust File Structures and Templates",
+  "version": "1.0.0",
+  "description": "Templates for automatically creating Rust project files",
+  "templates": [
+    {
+      "id": "main_rs_hello_world",
+      "file_type": "main_rs",
+      "trigger_keywords": ["hello world", "create program", "new program", "main function"],
+      "default_filename": "src/main.rs",
+      "template": "fn main() {\n    println!(\"Hello, world!\");\n}\n",
+      "variables": [],
+      "when_to_create": "User requests a hello world program or basic main.rs file",
+      "examples": [
+        "Create a hello world program",
+        "Make a new Rust program",
+        "Generate a basic main.rs"
+      ]
+    },
+    {
+      "id": "cargo_toml_binary",
+      "file_type": "cargo_toml",
+      "trigger_keywords": ["new project", "cargo init", "cargo new", "create project"],
+      "default_filename": "Cargo.toml",
+      "template": "[package]\nname = \"{{crate_name}}\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n",
+      "variables": ["{{crate_name}}"],
+      "when_to_create": "User requests a new Rust project or Cargo.toml file",
+      "examples": [
+        "Create a new Rust project called myapp",
+        "Make a Cargo.toml for project foo",
+        "Initialize a new Rust binary"
+      ]
+    },
+    {
+      "id": "lib_rs_basic",
+      "file_type": "lib_rs",
+      "trigger_keywords": ["library", "lib.rs", "create library", "new crate"],
+      "default_filename": "src/lib.rs",
+      "template": "//! {{crate_name}} - A Rust library\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn it_works() {\n        assert_eq!(2 + 2, 4);\n    }\n}\n",
+      "variables": ["{{crate_name}}"],
+      "when_to_create": "User requests a library crate or lib.rs file",
+      "examples": [
+        "Create a library crate",
+        "Make a lib.rs file",
+        "Generate a Rust library"
+      ]
+    },
+    {
+      "id": "test_file_integration",
+      "file_type": "test_file",
+      "trigger_keywords": ["integration test", "test file", "add tests", "create test"],
+      "default_filename": "tests/integration_test.rs",
+      "template": "// Integration tests\n\n#[test]\nfn test_{{function_name}}() {\n    // Test code here\n    assert!(true);\n}\n",
+      "variables": ["{{function_name}}"],
+      "when_to_create": "User requests integration tests or test files",
+      "examples": [
+        "Add tests for this function",
+        "Create integration tests",
+        "Generate test file"
+      ]
+    },
+    {
+      "id": "struct_module",
+      "file_type": "module_rs",
+      "trigger_keywords": ["struct", "create struct", "define struct", "new type"],
+      "default_filename": "src/{{module_name}}.rs",
+      "template": "use serde::{Deserialize, Serialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct {{struct_name}} {\n    // Fields here\n}\n\nimpl {{struct_name}} {\n    pub fn new() -> Self {\n        Self {\n            // Initialize fields\n        }\n    }\n}\n",
+      "variables": ["{{module_name}}", "{{struct_name}}"],
+      "when_to_create": "User asks to create a struct in a new file",
+      "examples": [
+        "Create a User struct",
+        "Generate a Config struct in src/config.rs",
+        "Make a new struct called Database"
+      ]
+    },
+    {
+      "id": "mod_rs",
+      "file_type": "mod_rs",
+      "trigger_keywords": ["module", "mod.rs", "create module"],
+      "default_filename": "src/{{module_name}}/mod.rs",
+      "template": "//! {{module_name}} module\n\npub mod submodule;\n\npub use submodule::*;\n",
+      "variables": ["{{module_name}}"],
+      "when_to_create": "User requests a module directory structure",
+      "examples": [
+        "Create a module called utils",
+        "Make a mod.rs for networking"
+      ]
+    }
+  ]
+}

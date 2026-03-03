@@ -32,6 +32,14 @@ pub enum WorkerMessage {
     FileOperationError { path: String, error: String },
     // Request user confirmation for file operations
     RequestFileConfirmation(PendingFileCreation),
+    FilesCreated(Vec<FileCreationInfo>),
+}
+
+#[derive(Debug, Clone)]
+pub struct FileCreationInfo {
+    pub path: String,
+    pub appended: bool,
+    pub success: bool,
 }
 
 #[derive(Debug, Clone)]

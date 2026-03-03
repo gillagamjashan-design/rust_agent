@@ -2,7 +2,7 @@
 
 use super::database::{
     CodeExample, CommandFlag, KnowledgeConcept, KnowledgeCommand, KnowledgeDatabase,
-    KnowledgePattern,
+    KnowledgeFileTemplate, KnowledgePattern,
 };
 use anyhow::Result;
 use serde_json::Value;
@@ -39,6 +39,12 @@ impl KnowledgeLoader {
         let toolchain_path = dir.as_ref().join("rust_toolchain_cargo.json");
         if toolchain_path.exists() {
             stats.commands += self.load_commands(&toolchain_path)?;
+        }
+
+        // Load file templates
+        let templates_path = dir.as_ref().join("rust_file_structures.json");
+        if templates_path.exists() {
+            stats.file_templates += self.load_file_templates(&templates_path)?;
         }
 
         Ok(stats)
@@ -253,6 +259,60 @@ impl KnowledgeLoader {
         Ok(count)
     }
 
+    /// Load file templates from rust_file_structures.json
+    fn load_file_templates<P: AsRef<Path>>(&self, path: P) -> Result<usize> {
+        let content = fs::read_to_string(path)?;
+        let data: Value = serde_json::from_str(&content)?;
+
+        let mut count = 0;
+
+        if let Some(templates) = data["templates"].as_array() {
+            for template in templates {
+                let id = template["id"].as_str().unwrap_or("unknown").to_string();
+
+                let trigger_keywords = if let Some(keywords) = template["trigger_keywords"].as_array() {
+                    keywords.iter()
+                        .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                        .collect()
+                } else {
+                    vec![]
+                };
+
+                let variables = if let Some(vars) = template["variables"].as_array() {
+                    vars.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                } else {
+                    vec![]
+                };
+
+                let examples = if let Some(ex) = template["examples"].as_array() {
+                    ex.iter()
+                        .filter_map(|e| e.as_str().map(|s| s.to_string()))
+                        .collect()
+                } else {
+                    vec![]
+                };
+
+                let file_template = KnowledgeFileTemplate {
+                    id,
+                    file_type: template["file_type"].as_str().unwrap_or("").to_string(),
+                    trigger_keywords,
+                    default_filename: template["default_filename"].as_str().unwrap_or("").to_string(),
+                    template: template["template"].as_str().unwrap_or("").to_string(),
+                    variables,
+                    when_to_create: template["when_to_create"].as_str().unwrap_or("").to_string(),
+                    examples,
+                };
+
+                self.db.store_file_template(&file_template)?;
+                count += 1;
+            }
+        }
+
+        Ok(count)
+    }
+
     /// Get database statistics
     pub fn get_stats(&self) -> Result<LoadStats> {
         Ok(LoadStats {
@@ -260,6 +320,7 @@ impl KnowledgeLoader {
             patterns: self.db.count_patterns()?,
             errors: self.db.count_errors()?,
             commands: self.db.count_commands()?,
+            file_templates: self.db.count_file_templates()?,
         })
     }
 }
@@ -271,11 +332,12 @@ pub struct LoadStats {
     pub patterns: usize,
     pub errors: usize,
     pub commands: usize,
+    pub file_templates: usize,
 }
 
 impl LoadStats {
     pub fn total(&self) -> usize {
-        self.concepts + self.patterns + self.errors + self.commands
+        self.concepts + self.patterns + self.errors + self.commands + self.file_templates
     }
 }
 
@@ -283,11 +345,12 @@ impl std::fmt::Display for LoadStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Loaded {} concepts, {} patterns, {} errors, {} commands (total: {})",
+            "Loaded {} concepts, {} patterns, {} errors, {} commands, {} file_templates (total: {})",
             self.concepts,
             self.patterns,
             self.errors,
             self.commands,
+            self.file_templates,
             self.total()
         )
     }

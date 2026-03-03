@@ -69,6 +69,19 @@ pub struct CommandFlag {
     pub description: String,
 }
 
+/// File template for automatic file creation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KnowledgeFileTemplate {
+    pub id: String,
+    pub file_type: String,              // "main_rs", "lib_rs", "cargo_toml"
+    pub trigger_keywords: Vec<String>,   // ["hello world", "create program"]
+    pub default_filename: String,        // "src/main.rs"
+    pub template: String,                // File content template
+    pub variables: Vec<String>,          // ["{{crate_name}}", "{{struct_name}}"]
+    pub when_to_create: String,          // Human-readable usage description
+    pub examples: Vec<String>,           // Example user queries
+}
+
 /// Knowledge database backed by SQLite with FTS5
 #[derive(Clone)]
 pub struct KnowledgeDatabase {
@@ -202,6 +215,44 @@ impl KnowledgeDatabase {
 
             -- Index on tool for filtering
             CREATE INDEX IF NOT EXISTS idx_commands_tool ON commands(tool);
+
+            -- File templates table
+            CREATE TABLE IF NOT EXISTS file_templates (
+                id TEXT PRIMARY KEY,
+                file_type TEXT NOT NULL,
+                trigger_keywords TEXT NOT NULL,     -- JSON array
+                default_filename TEXT NOT NULL,
+                template TEXT NOT NULL,
+                variables TEXT,                     -- JSON array
+                when_to_create TEXT,
+                examples TEXT,                      -- JSON array
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- FTS5 virtual table for searching templates
+            CREATE VIRTUAL TABLE IF NOT EXISTS file_templates_fts USING fts5(
+                file_type, trigger_keywords, when_to_create,
+                content='file_templates',
+                content_rowid='rowid'
+            );
+
+            -- Triggers to keep FTS5 in sync
+            CREATE TRIGGER IF NOT EXISTS file_templates_ai AFTER INSERT ON file_templates BEGIN
+                INSERT INTO file_templates_fts(rowid, file_type, trigger_keywords, when_to_create)
+                VALUES (NEW.rowid, NEW.file_type, NEW.trigger_keywords, NEW.when_to_create);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS file_templates_ad AFTER DELETE ON file_templates BEGIN
+                INSERT INTO file_templates_fts(file_templates_fts, rowid, file_type, trigger_keywords, when_to_create)
+                VALUES('delete', OLD.rowid, OLD.file_type, OLD.trigger_keywords, OLD.when_to_create);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS file_templates_au AFTER UPDATE ON file_templates BEGIN
+                INSERT INTO file_templates_fts(file_templates_fts, rowid, file_type, trigger_keywords, when_to_create)
+                VALUES('delete', OLD.rowid, OLD.file_type, OLD.trigger_keywords, OLD.when_to_create);
+                INSERT INTO file_templates_fts(rowid, file_type, trigger_keywords, when_to_create)
+                VALUES (NEW.rowid, NEW.file_type, NEW.trigger_keywords, NEW.when_to_create);
+            END;
             "#,
         )?;
 
@@ -359,6 +410,149 @@ impl KnowledgeDatabase {
         )?;
 
         Ok(conn.last_insert_rowid())
+    }
+
+    /// Store a file template
+    pub fn store_file_template(&self, template: &KnowledgeFileTemplate) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO file_templates (id, file_type, trigger_keywords,
+             default_filename, template, variables, when_to_create, examples)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                template.id,
+                template.file_type,
+                serde_json::to_string(&template.trigger_keywords)?,
+                template.default_filename,
+                template.template,
+                serde_json::to_string(&template.variables)?,
+                template.when_to_create,
+                serde_json::to_string(&template.examples)?,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Get file template by ID
+    pub fn get_file_template(&self, id: &str) -> Result<Option<KnowledgeFileTemplate>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, file_type, trigger_keywords, default_filename, template,
+             variables, when_to_create, examples
+             FROM file_templates WHERE id = ?1",
+        )?;
+
+        let mut rows = stmt.query([id])?;
+
+        if let Some(row) = rows.next()? {
+            Ok(Some(KnowledgeFileTemplate {
+                id: row.get(0)?,
+                file_type: row.get(1)?,
+                trigger_keywords: serde_json::from_str(&row.get::<_, String>(2)?)?,
+                default_filename: row.get(3)?,
+                template: row.get(4)?,
+                variables: serde_json::from_str(&row.get::<_, String>(5)?)?,
+                when_to_create: row.get(6)?,
+                examples: serde_json::from_str(&row.get::<_, String>(7)?)?,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Count file templates
+    pub fn count_file_templates(&self) -> Result<usize> {
+        let conn = self.conn.lock().unwrap();
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM file_templates", [], |row| row.get(0))?;
+        Ok(count as usize)
+    }
+
+    /// Search file templates by matching trigger keywords against user query
+    /// Returns templates whose trigger_keywords match words in the query
+    pub fn search_file_templates(&self, query: &str) -> Result<Vec<KnowledgeFileTemplate>> {
+        let conn = self.conn.lock().unwrap();
+        let query_lower = query.to_lowercase();
+
+        // Get all templates and filter by keyword match
+        let mut stmt = conn.prepare(
+            "SELECT id, file_type, trigger_keywords, default_filename, template,
+             variables, when_to_create, examples FROM file_templates"
+        )?;
+
+        let mut templates = Vec::new();
+        let rows = stmt.query_map([], |row| {
+            Ok(KnowledgeFileTemplate {
+                id: row.get(0)?,
+                file_type: row.get(1)?,
+                trigger_keywords: serde_json::from_str(&row.get::<_, String>(2)?).unwrap_or_default(),
+                default_filename: row.get(3)?,
+                template: row.get(4)?,
+                variables: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
+                when_to_create: row.get(6)?,
+                examples: serde_json::from_str(&row.get::<_, String>(7)?).unwrap_or_default(),
+            })
+        })?;
+
+        for row in rows {
+            if let Ok(template) = row {
+                // Check if any trigger keyword matches the query
+                let matches = template.trigger_keywords.iter().any(|kw| {
+                    query_lower.contains(&kw.to_lowercase())
+                });
+                if matches {
+                    templates.push(template);
+                }
+            }
+        }
+
+        Ok(templates)
+    }
+
+    /// Get the best matching file template for a given code block
+    /// Analyzes code content to determine the appropriate template
+    pub fn get_template_for_code(&self, code: &str, language: &str) -> Result<Option<KnowledgeFileTemplate>> {
+        // Determine file type based on code content
+        let file_type = if language == "toml" && code.contains("[package]") {
+            "cargo_toml"
+        } else if language == "rust" {
+            if code.contains("fn main()") {
+                "main_rs"
+            } else if code.contains("#[test]") || code.contains("#[cfg(test)]") {
+                "test_file"
+            } else if code.contains("pub struct") || code.contains("pub enum") {
+                "module_rs"
+            } else {
+                "lib_rs"
+            }
+        } else {
+            return Ok(None);
+        };
+
+        // Query for matching template
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, file_type, trigger_keywords, default_filename, template,
+             variables, when_to_create, examples
+             FROM file_templates WHERE file_type = ?1 LIMIT 1"
+        )?;
+
+        let mut rows = stmt.query([file_type])?;
+
+        if let Some(row) = rows.next()? {
+            Ok(Some(KnowledgeFileTemplate {
+                id: row.get(0)?,
+                file_type: row.get(1)?,
+                trigger_keywords: serde_json::from_str(&row.get::<_, String>(2)?).unwrap_or_default(),
+                default_filename: row.get(3)?,
+                template: row.get(4)?,
+                variables: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
+                when_to_create: row.get(6)?,
+                examples: serde_json::from_str(&row.get::<_, String>(7)?).unwrap_or_default(),
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Count total concepts

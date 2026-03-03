@@ -51,8 +51,8 @@ impl App {
             let db = KnowledgeDatabase::new(&db_path)?;
             let loader = KnowledgeLoader::new(db.clone());
             let stats = loader.load_all_from_directory("knowledge")?;
-            eprintln!("✅ Loaded {} concepts, {} patterns, {} commands", 
-                     stats.concepts, stats.patterns, stats.commands);
+            eprintln!("✅ Loaded {} concepts, {} patterns, {} commands, {} file_templates",
+                     stats.concepts, stats.patterns, stats.commands, stats.file_templates);
             db
         };
         
