@@ -1,4 +1,4 @@
-use super::messages::{Message, Role, UserCommand, WorkerMessage};
+use super::messages::{Message, Role, UserCommand, WorkerMessage, PendingFileCreation};
 use super::theme;
 use super::worker;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -11,6 +11,9 @@ pub struct RustyApp {
     pub knowledge_stats: String,
     pub scroll_to_bottom: bool,
     pub first_render: bool,
+
+    // File confirmation dialog state
+    pub pending_file_confirmation: Option<PendingFileCreation>,
 
     // Channels for async communication
     message_rx: Receiver<WorkerMessage>,
@@ -39,21 +42,30 @@ impl RustyApp {
         eprintln!("✅ Worker thread spawned");
         eprintln!("🎨 Initializing GUI...");
 
+        // Get workspace for welcome message
+        let workspace = std::env::current_dir()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|_| "current directory".to_string());
+
         // Create welcome message
         let welcome = Message::new(
             Role::System,
-            "🦀 Welcome to Rusty - Your Rust Learning Agent!\n\n\
-             I'm here to help you learn Rust programming. I have instant access to:\n\
-             • Rust core concepts (ownership, lifetimes, traits)\n\
-             • Design patterns and idioms\n\
-             • Cargo commands and toolchain usage\n\
-             • Async/concurrency examples\n\n\
-             💬 Ask me anything! For example:\n\
-             • \"What is ownership?\"\n\
-             • \"How do I use cargo test?\"\n\
-             • \"Show me the builder pattern\"\n\n\
-             📋 Type /help to see available commands\n\
-             🔍 Type /search <topic> to search the knowledge base".to_string(),
+            format!(
+                "🦀 Welcome to Rusty - Your Rust Learning Agent!\n\n\
+                 I'm here to help you learn Rust programming. I have instant access to:\n\
+                 • Rust core concepts (ownership, lifetimes, traits)\n\
+                 • Design patterns and idioms\n\
+                 • Cargo commands and toolchain usage\n\
+                 • Async/concurrency examples\n\n\
+                 💬 Ask me anything! For example:\n\
+                 • \"What is ownership?\"\n\
+                 • \"How do I use cargo test?\"\n\
+                 • \"Show me the builder pattern\"\n\n\
+                 📋 Type /help to see available commands\n\
+                 🔍 Type /search <topic> to search the knowledge base\n\n\
+                 📂 Files will be created in: {}",
+                workspace
+            ),
         );
 
         Self {
@@ -63,6 +75,7 @@ impl RustyApp {
             knowledge_stats: String::new(),
             scroll_to_bottom: false,
             first_render: true,
+            pending_file_confirmation: None,
             message_rx,
             command_tx,
         }
@@ -124,6 +137,59 @@ impl RustyApp {
             WorkerMessage::Stats(text) => {
                 self.knowledge_stats = text;
             }
+            WorkerMessage::FileCreated { path, success, message } => {
+                let content = if success {
+                    format!("📄 Created file: {}\n{}", path, message)
+                } else {
+                    format!("❌ Failed to create {}: {}", path, message)
+                };
+                self.messages.push(Message::new(Role::FileOperation, content));
+                self.scroll_to_bottom = true;
+            }
+            WorkerMessage::FileModified { path, success, message } => {
+                let content = if success {
+                    format!("✏️  Modified file: {}\n{}", path, message)
+                } else {
+                    format!("❌ Failed to modify {}: {}", path, message)
+                };
+                self.messages.push(Message::new(Role::FileOperation, content));
+                self.scroll_to_bottom = true;
+            }
+            WorkerMessage::FileOperationError { path, error } => {
+                self.messages.push(Message::new(
+                    Role::FileOperation,
+                    format!("❌ File operation failed on {}:\n{}", path, error),
+                ));
+                self.scroll_to_bottom = true;
+            }
+            WorkerMessage::RequestFileConfirmation(pending) => {
+                self.pending_file_confirmation = Some(pending);
+                self.scroll_to_bottom = true;
+            }
+        }
+    }
+
+    // Approve file creation
+    pub fn approve_file_creation(&mut self) {
+        if let Some(pending) = self.pending_file_confirmation.take() {
+            self.command_tx.send(UserCommand::ConfirmFileCreation {
+                approved: true,
+                operations: pending.operations,
+            }).ok();
+        }
+    }
+
+    // Cancel file creation
+    pub fn cancel_file_creation(&mut self) {
+        if let Some(pending) = self.pending_file_confirmation.take() {
+            self.command_tx.send(UserCommand::ConfirmFileCreation {
+                approved: false,
+                operations: pending.operations,
+            }).ok();
+            self.messages.push(Message::new(
+                Role::System,
+                "File creation cancelled.".to_string(),
+            ));
         }
     }
 }

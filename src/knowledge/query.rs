@@ -16,6 +16,11 @@ impl KnowledgeQuery {
         Self { db }
     }
 
+    /// Get reference to underlying database (for testing and advanced use)
+    pub fn database(&self) -> &KnowledgeDatabase {
+        &self.db
+    }
+
     /// Search concepts using full-text search
     pub fn search_concepts(&self, query: &str) -> Result<Vec<KnowledgeConcept>> {
         self.search_concepts_limit(query, 10)

@@ -1,4 +1,4 @@
-use super::messages::{UserCommand, WorkerMessage};
+use super::messages::{UserCommand, WorkerMessage, PendingFileCreation, FileOperationRequest};
 use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
@@ -7,6 +7,7 @@ use std::thread::JoinHandle;
 use rust_agent::knowledge::{KnowledgeDatabase, KnowledgeQuery};
 use rust_agent::tools::KnowledgeFetcher;
 use rust_agent::claude_proxy::ClaudeProxy;
+use rust_agent::tools::{FileOperations, parse_code_blocks};
 
 pub fn spawn_worker(
     command_rx: Receiver<UserCommand>,
@@ -33,6 +34,12 @@ async fn worker_loop(
     let query = KnowledgeQuery::new(db.clone());
     let knowledge_fetcher = KnowledgeFetcher::new(query);
     let claude = ClaudeProxy::new();
+
+    // Initialize file operations using current working directory
+    let workspace = std::env::current_dir()
+        .unwrap_or_else(|_| PathBuf::from("."));
+    eprintln!("📂 File workspace: {:?}", workspace);
+    let file_ops = FileOperations::new(Some(workspace));
 
     // Send initial stats
     let concept_count = db.count_concepts().unwrap_or(0);
@@ -68,6 +75,61 @@ async fn worker_loop(
                 match claude.query(&prompt).await {
                     Ok(response) => {
                         eprintln!("✅ Got response ({} chars)", response.len());
+
+                        // Parse code blocks from response
+                        let code_blocks = parse_code_blocks(&response, &text);
+
+                        if !code_blocks.is_empty() {
+                            eprintln!("📝 Found {} code blocks, creating files automatically...", code_blocks.len());
+
+                            // Create files immediately without confirmation
+                            for cb in code_blocks {
+                                eprintln!("🔨 Creating file: {} ({} bytes)", cb.path, cb.content.len());
+
+                                let result = file_ops.create_file(&cb.path, &cb.content);
+
+                                match result {
+                                    Ok(success_msg) => {
+                                        eprintln!("{}", success_msg);
+                                        message_tx.send(WorkerMessage::FileCreated {
+                                            path: cb.path.clone(),
+                                            success: true,
+                                            message: success_msg,
+                                        }).ok();
+                                    }
+                                    Err(e) => {
+                                        // Handle "already exists" error - try modify
+                                        if e.to_string().contains("already exists") {
+                                            match file_ops.modify_file(&cb.path, &cb.content) {
+                                                Ok(msg) => {
+                                                    eprintln!("{}", msg);
+                                                    message_tx.send(WorkerMessage::FileModified {
+                                                        path: cb.path.clone(),
+                                                        success: true,
+                                                        message: msg,
+                                                    }).ok();
+                                                }
+                                                Err(e2) => {
+                                                    eprintln!("❌ File operation failed: {}", e2);
+                                                    message_tx.send(WorkerMessage::FileOperationError {
+                                                        path: cb.path,
+                                                        error: e2.to_string(),
+                                                    }).ok();
+                                                }
+                                            }
+                                        } else {
+                                            eprintln!("❌ File operation failed: {}", e);
+                                            message_tx.send(WorkerMessage::FileOperationError {
+                                                path: cb.path,
+                                                error: e.to_string(),
+                                            }).ok();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Send the main response (unchanged)
                         message_tx.send(WorkerMessage::Response(response)).ok();
                     }
                     Err(e) => {
@@ -89,6 +151,72 @@ async fn worker_loop(
                 eprintln!("⚙️  Executing command: {}", cmd);
                 let result = execute_command(&cmd, &knowledge_fetcher, &db);
                 message_tx.send(WorkerMessage::Response(result)).ok();
+            }
+            Ok(UserCommand::ConfirmFileCreation { approved, operations }) => {
+                if approved {
+                    eprintln!("✅ User approved file creation, creating {} files...", operations.len());
+
+                    for op in operations {
+                        eprintln!("🔨 Creating file: {} ({} bytes)", op.path, op.content.len());
+
+                        let result = if op.operation_type == "create" {
+                            file_ops.create_file(&op.path, &op.content)
+                        } else {
+                            file_ops.modify_file(&op.path, &op.content)
+                        };
+
+                        match result {
+                            Ok(success_msg) => {
+                                eprintln!("{}", success_msg);
+
+                                if op.operation_type == "create" {
+                                    message_tx.send(WorkerMessage::FileCreated {
+                                        path: op.path.clone(),
+                                        success: true,
+                                        message: success_msg,
+                                    }).ok();
+                                } else {
+                                    message_tx.send(WorkerMessage::FileModified {
+                                        path: op.path.clone(),
+                                        success: true,
+                                        message: success_msg,
+                                    }).ok();
+                                }
+                            }
+                            Err(e) => {
+                                // Handle "already exists" error - try modify
+                                if e.to_string().contains("already exists") {
+                                    match file_ops.modify_file(&op.path, &op.content) {
+                                        Ok(msg) => {
+                                            eprintln!("{}", msg);
+                                            message_tx.send(WorkerMessage::FileModified {
+                                                path: op.path.clone(),
+                                                success: true,
+                                                message: msg,
+                                            }).ok();
+                                        }
+                                        Err(e2) => {
+                                            eprintln!("❌ File operation failed: {}", e2);
+                                            message_tx.send(WorkerMessage::FileOperationError {
+                                                path: op.path,
+                                                error: e2.to_string(),
+                                            }).ok();
+                                        }
+                                    }
+                                } else {
+                                    eprintln!("❌ File operation failed: {}", e);
+                                    message_tx.send(WorkerMessage::FileOperationError {
+                                        path: op.path,
+                                        error: e.to_string(),
+                                    }).ok();
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    eprintln!("❌ User cancelled file creation");
+                    // No action needed - user already sees cancellation message
+                }
             }
             Ok(UserCommand::Quit) => {
                 eprintln!("👋 Quit command received");

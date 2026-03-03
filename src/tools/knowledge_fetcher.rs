@@ -214,7 +214,7 @@ mod tests {
         let fetcher = KnowledgeFetcher::new(query);
 
         // Add test concept
-        fetcher.query.db.store_concept(&KnowledgeConcept {
+        fetcher.query.database().store_concept(&KnowledgeConcept {
             id: "ownership-test".to_string(),
             topic: "ownership".to_string(),
             title: "Ownership Rules".to_string(),
@@ -237,7 +237,7 @@ mod tests {
         let fetcher = KnowledgeFetcher::new(query);
 
         // Add test pattern
-        fetcher.query.db.store_pattern(&KnowledgePattern {
+        fetcher.query.database().store_pattern(&KnowledgePattern {
             id: "builder".to_string(),
             name: "Builder Pattern".to_string(),
             description: "Builder pattern for construction".to_string(),

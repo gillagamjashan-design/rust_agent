@@ -36,3 +36,6 @@ chrono = "0.4"
 
 # Directories
 dirs = "5.0"
+
+# Regular expressions (for code block parsing)
+regex = "1.10"

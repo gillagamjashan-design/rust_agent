@@ -1,5 +1,5 @@
 use super::app::RustyApp;
-use super::messages::{Message, Role};
+use super::messages::{Message, Role, PendingFileCreation};
 use super::theme;
 use egui::{RichText, ScrollArea};
 
@@ -26,6 +26,11 @@ pub fn render_ui(ctx: &egui::Context, app: &mut RustyApp) {
             render_input_area(ui, app);
         });
     });
+
+    // Render file confirmation dialog (overlays chat)
+    if let Some(ref pending) = app.pending_file_confirmation.clone() {
+        render_file_confirmation_dialog(ctx, app, &pending);
+    }
 }
 
 fn render_header(ui: &mut egui::Ui, app: &RustyApp) {
@@ -78,6 +83,7 @@ fn render_message(ui: &mut egui::Ui, message: &Message) {
         Role::User => ("You: ", theme::CYAN),
         Role::Assistant => ("Agent: ", theme::GREEN),
         Role::System => ("System: ", theme::YELLOW),
+        Role::FileOperation => ("📁 File: ", theme::BRIGHT_CYAN),
     };
 
     let timestamp = message.timestamp.format("%H:%M:%S");
@@ -161,4 +167,73 @@ fn render_input_area(ui: &mut egui::Ui, app: &mut RustyApp) {
             app.scroll_to_bottom = true;
         }
     });
+}
+
+pub fn render_file_confirmation_dialog(
+    ctx: &egui::Context,
+    app: &mut RustyApp,
+    pending: &PendingFileCreation,
+) {
+    // Keyboard shortcuts
+    if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
+        app.approve_file_creation();
+        return;
+    }
+
+    if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+        app.cancel_file_creation();
+        return;
+    }
+
+    egui::Window::new("📝 Confirm File Creation")
+        .collapsible(false)
+        .resizable(false)
+        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+        .show(ctx, |ui| {
+            ui.heading("The agent wants to create the following files:");
+            ui.add_space(10.0);
+
+            // File list
+            egui::ScrollArea::vertical()
+                .max_height(300.0)
+                .show(ui, |ui| {
+                    for op in &pending.operations {
+                        ui.group(|ui| {
+                            ui.horizontal(|ui| {
+                                ui.label("📄");
+                                ui.strong(&op.path);
+                            });
+
+                            // Content preview (first 3 lines)
+                            let preview: Vec<&str> = op.content.lines().take(3).collect();
+                            ui.label(format!("Preview:\n{}", preview.join("\n")));
+
+                            if op.content.lines().count() > 3 {
+                                ui.label(format!("... ({} more lines)", op.content.lines().count() - 3));
+                            }
+                        });
+                        ui.add_space(5.0);
+                    }
+                });
+
+            ui.add_space(10.0);
+            ui.separator();
+            ui.add_space(10.0);
+
+            // Buttons
+            ui.horizontal(|ui| {
+                if ui.button("✅ Create Files").clicked() {
+                    app.approve_file_creation();
+                }
+
+                ui.add_space(10.0);
+
+                if ui.button("❌ Cancel").clicked() {
+                    app.cancel_file_creation();
+                }
+            });
+
+            ui.add_space(5.0);
+            ui.label("💡 Tip: Press Enter to create, Esc to cancel");
+        });
 }
