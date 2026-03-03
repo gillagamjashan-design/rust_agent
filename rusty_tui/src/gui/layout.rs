@@ -11,7 +11,7 @@ pub fn render_ui(ctx: &egui::Context, app: &mut RustyApp) {
             ui.separator();
 
             // Chat area - allocate all remaining space
-            let available_height = ui.available_height() - 50.0; // Reserve 50px for input + separator
+            let available_height = ui.available_height() - 80.0; // Reserve 80px for input frame + separator
             ui.allocate_ui_with_layout(
                 egui::vec2(ui.available_width(), available_height),
                 egui::Layout::top_down(egui::Align::LEFT),
@@ -233,11 +233,13 @@ fn render_code_block(ui: &mut egui::Ui, code: &str, language: &str) {
             ui.add_space(4.0);
         }
 
-        // Code content
+        // Code content (create mutable copy for TextEdit)
+        let mut code_copy = code.to_string();
         ui.add(
-            egui::TextEdit::multiline(&mut code)
+            egui::TextEdit::multiline(&mut code_copy)
                 .code_editor()
                 .desired_width(f32::INFINITY)
+                .interactive(false)  // Make it read-only
         );
     });
 }
