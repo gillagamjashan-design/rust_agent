@@ -320,9 +320,36 @@ Remember: Your goal is to make the student a Rust ownership EXPERT through:
 
     /// Simple query method for general use with system prompt for file creation
     pub async fn query(&self, prompt: &str) -> Result<String> {
-        let system_prompt = r#"You are Rusty, a Rust learning agent.
+        self.query_with_hints(prompt, None).await
+    }
+
+    /// Query method with optional project structure hints
+    /// The hints provide context about what files should be created for the project type
+    pub async fn query_with_hints(&self, prompt: &str, project_hints: Option<&str>) -> Result<String> {
+        let base_system_prompt = r#"You are Rusty, a Rust learning agent.
 
 IMPORTANT: Your code examples will be AUTOMATICALLY SAVED to files.
+
+## CRITICAL: Be Thorough with File Creation
+
+Before writing ANY code, STOP and think through ALL files needed for a complete, working project:
+
+**Always include these files for Rust projects:**
+- `Cargo.toml` - REQUIRED: Package manifest with dependencies
+- `src/main.rs` OR `src/lib.rs` - REQUIRED: Entry point
+- `src/mod.rs` files - For any submodules you create
+- Any additional modules mentioned in `mod` declarations
+- `tests/` directory files if tests are needed
+- Configuration files (`.env`, `config.toml`) if the app uses them
+
+**Think before coding:**
+1. What is the user asking for?
+2. What modules/components are needed?
+3. What external crates are required? (Add to Cargo.toml!)
+4. Are there any supporting files needed?
+
+**NEVER create incomplete projects.** If you mention a module, CREATE IT.
+If you use a crate, ADD IT TO Cargo.toml. Every `mod foo;` needs a `foo.rs` or `foo/mod.rs`.
 
 When a user asks you to create, write, or make files:
 1. Provide complete, working code in markdown code blocks
@@ -364,10 +391,222 @@ Run it with `cargo run`!"
 - Multiple code blocks = multiple files automatically created
 - Don't tell users to "save this to a file" - it happens automatically
 - Just provide good code and the agent handles file creation
+- **Create ALL files in one response** - don't make users ask for missing pieces
+- **Every module declaration needs its file** - no dangling `mod` statements
 
 Your knowledge database contains Rust concepts, patterns, and commands.
 Use this knowledge to teach effectively with practical, working code."#;
 
-        self.send_request(prompt.to_string(), Some(system_prompt.to_string())).await
+        // If we have project hints, append them to the system prompt
+        let system_prompt = if let Some(hints) = project_hints {
+            format!(
+                "{}\n\n---\n\n## KNOWLEDGE-BASED PROJECT STRUCTURE\n\n\
+                The knowledge database has identified this as a specific project type.\n\
+                **YOU MUST CREATE ALL THE FILES LISTED BELOW.**\n\n\
+                {}\n\n\
+                ---\n\n\
+                **IMPORTANT:** Create ALL the required files listed above in your response.\n\
+                Use the recommended dependencies in your Cargo.toml.\n\
+                Follow the best practices mentioned.",
+                base_system_prompt,
+                hints
+            )
+        } else {
+            base_system_prompt.to_string()
+        };
+
+        self.send_request(prompt.to_string(), Some(system_prompt)).await
+    }
+
+    /// Query with compile error context for debugging
+    pub async fn query_with_compile_context(
+        &self,
+        user_query: &str,
+        errors: &[crate::tools::ContextCompilerError],
+        files: &[crate::tools::FileWithContent],
+    ) -> Result<String> {
+        let system_prompt = r#"You are Rusty, a Rust debugging assistant.
+
+Your task is to fix compilation errors in Rust code. You will receive:
+1. Compiler error messages
+2. The affected source files
+
+CRITICAL INSTRUCTIONS:
+- Analyze the errors carefully
+- Provide FIXED CODE in markdown code blocks with proper filenames
+- Use ```rust for Rust code blocks
+- Only show the files that need changes
+- Your code will be AUTOMATICALLY APPLIED to fix the errors
+
+Format your response as:
+```rust
+// Fixed code here
+```
+
+Be precise and thorough."#;
+
+        // Build the prompt with errors and file contents
+        let mut prompt = format!("The user says: {}\n\n", user_query);
+
+        prompt.push_str("## Compilation Errors:\n\n");
+        for error in errors {
+            prompt.push_str(&format!(
+                "File: {}, Line: {:?}, Column: {:?}\n",
+                error.file, error.line, error.column
+            ));
+            if let Some(code) = &error.code {
+                prompt.push_str(&format!("Error code: {}\n", code));
+            }
+            prompt.push_str(&format!("Message: {}\n\n", error.message));
+        }
+
+        prompt.push_str("## Current Source Code:\n\n");
+        for file in files {
+            prompt.push_str(&format!("### {}\n\n```rust\n{}\n```\n\n", file.path, file.content));
+        }
+
+        prompt.push_str("\nPlease provide the FIXED CODE for the files that need changes.");
+
+        self.send_request(prompt, Some(system_prompt.to_string())).await
+    }
+
+    /// Query with runtime issue context
+    pub async fn query_with_runtime_context(
+        &self,
+        user_query: &str,
+        files: &[crate::tools::FileWithContent],
+        cargo_toml: &str,
+    ) -> Result<String> {
+        let system_prompt = r#"You are Rusty, a Rust debugging assistant.
+
+The user has reported a runtime or visual issue. You will receive:
+1. Their description of the problem
+2. The project's Cargo.toml
+3. Relevant source files
+
+CRITICAL INSTRUCTIONS:
+- Analyze the issue based on the description
+- Identify the likely cause in the code
+- Provide FIXED CODE in markdown code blocks
+- Use ```rust for Rust code blocks
+- Only show the files that need changes
+- Your code will be AUTOMATICALLY APPLIED
+
+Format your response as:
+```rust
+// Fixed code here
+```
+
+Be thorough and explain what you fixed."#;
+
+        let mut prompt = format!("The user reports: {}\n\n", user_query);
+
+        prompt.push_str("## Cargo.toml:\n```toml\n");
+        prompt.push_str(cargo_toml);
+        prompt.push_str("\n```\n\n");
+
+        prompt.push_str("## Relevant Source Files:\n\n");
+        for file in files {
+            prompt.push_str(&format!("### {}\n\n```rust\n{}\n```\n\n", file.path, file.content));
+        }
+
+        prompt.push_str("\nPlease provide the FIXED CODE for the files that need changes.");
+
+        self.send_request(prompt, Some(system_prompt.to_string())).await
+    }
+
+    /// Query with feature context for adding new functionality
+    pub async fn query_with_feature_context(
+        &self,
+        user_query: &str,
+        files: &[crate::tools::FileWithContent],
+        cargo_toml: &str,
+    ) -> Result<String> {
+        let system_prompt = r#"You are Rusty, a Rust development assistant.
+
+The user wants to add a new feature. You will receive:
+1. Their feature request
+2. The project's Cargo.toml
+3. Relevant source files
+
+CRITICAL INSTRUCTIONS:
+- Understand the existing code structure
+- Add the requested feature following the existing patterns
+- Provide COMPLETE, UPDATED CODE in markdown code blocks
+- Use ```rust for Rust code blocks
+- Show ALL files that need changes (full file content)
+- Your code will be AUTOMATICALLY APPLIED
+
+Format your response as:
+```rust
+// Updated code with new feature
+```
+
+Be thorough and maintain code quality."#;
+
+        let mut prompt = format!("The user wants: {}\n\n", user_query);
+
+        prompt.push_str("## Cargo.toml:\n```toml\n");
+        prompt.push_str(cargo_toml);
+        prompt.push_str("\n```\n\n");
+
+        prompt.push_str("## Current Source Files:\n\n");
+        for file in files {
+            prompt.push_str(&format!("### {}\n\n```rust\n{}\n```\n\n", file.path, file.content));
+        }
+
+        prompt.push_str("\nPlease provide the UPDATED CODE with the new feature implemented.");
+
+        self.send_request(prompt, Some(system_prompt.to_string())).await
+    }
+
+    /// Query with full workspace context for general queries
+    pub async fn query_with_full_context(
+        &self,
+        user_query: &str,
+        files: &[crate::tools::FileWithContent],
+        cargo_toml: &str,
+    ) -> Result<String> {
+        let system_prompt = r#"You are Rusty, a Rust assistant with FULL access to the user's project.
+
+The user's complete project files are provided below. Use them to:
+- Understand the existing code structure
+- Debug issues by analyzing the actual code
+- Add features following existing patterns
+- Provide accurate, contextual help
+
+IMPORTANT: Your code examples will be AUTOMATICALLY SAVED to files.
+Use markdown code blocks with proper language tags:
+- ```rust for Rust code
+- ```toml for TOML files
+
+When providing help:
+1. Reference the actual code from the project
+2. Provide context-aware suggestions
+3. Maintain consistency with existing patterns
+4. Only create/modify files if the user requests it"#;
+
+        let mut prompt = format!("User request: {}\n\n", user_query);
+
+        prompt.push_str("## Cargo.toml:\n```toml\n");
+        prompt.push_str(cargo_toml);
+        prompt.push_str("\n```\n\n");
+
+        if !files.is_empty() {
+            prompt.push_str("## Project Files:\n\n");
+            for file in files {
+                // Determine language tag from file extension
+                let lang = if file.path.ends_with(".toml") {
+                    "toml"
+                } else if file.path.ends_with(".rs") {
+                    "rust"
+                } else {
+                    "text"
+                };
+                prompt.push_str(&format!("### {}\n```{}\n{}\n```\n\n", file.path, lang, file.content));
+            }
+        }
+
+        self.send_request(prompt, Some(system_prompt.to_string())).await
     }
 }
